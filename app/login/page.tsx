@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login, ApiError } from "@/lib/api";
+import { login, getUser, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -13,11 +13,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Already logged in
-  if (user) {
-    router.replace("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (user) router.replace("/dashboard");
+  }, [user, router]);
+
+  if (user) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,19 +25,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { token } = await login(email);
-      // Fetch user profile from token subject — for prototype we store a minimal object
-      // The backend returns user info on register; on login we just have the token.
-      // Decode the JWT payload to get the user id, then we just store email + id.
       const payload = JSON.parse(atob(token.split(".")[1]));
-      const minimalUser = {
-        id: payload.sub,
-        email,
-        fullName: "",
-        kycTier: "UNVERIFIED",
-        monthlyLimitAudCents: 0,
-        createdAt: new Date().toISOString(),
-      };
-      setAuth(minimalUser, token);
+      // Store token first so getUser() request is authenticated
+      localStorage.setItem("remit_token", token);
+      const userProfile = await getUser(payload.sub);
+      setAuth(userProfile, token);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Invalid email or password");

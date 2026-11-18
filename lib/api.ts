@@ -46,6 +46,10 @@ export function register(email: string, fullName: string) {
   return request<User>("/v1/users", { method: "POST", body: { email, fullName } });
 }
 
+export function getUser(id: string) {
+  return request<User>(`/v1/users/${id}`);
+}
+
 export function login(email: string) {
   return request<{ token: string; tokenType: string; expiresIn: number }>(
     "/auth/token",
@@ -53,9 +57,37 @@ export function login(email: string) {
   );
 }
 
-// ── Transfers ─────────────────────────────────────────────────────────────────
+// ── Quotes ────────────────────────────────────────────────────────────────────
 
 export interface MoneyView { amount: string; currency: string }
+
+export interface Quote {
+  id: string;
+  sendAmount: MoneyView;
+  feeAmount: MoneyView;
+  receiveAmount: MoneyView;
+  customerRate: number;
+  expiresAt: string;
+  expired: boolean;
+  used: boolean;
+}
+
+export const CORRIDORS: { from: string; to: string; label: string }[] = [
+  { from: "AUD", to: "PHP", label: "Philippines (PHP)" },
+  { from: "AUD", to: "INR", label: "India (INR)" },
+  { from: "AUD", to: "VND", label: "Vietnam (VND)" },
+  { from: "AUD", to: "IDR", label: "Indonesia (IDR)" },
+  { from: "AUD", to: "CNY", label: "China (CNY)" },
+];
+
+export function getQuote(sendAmount: string, destCurrency: string) {
+  return request<Quote>("/v1/quotes", {
+    method: "POST",
+    body: { sourceCurrency: "AUD", destCurrency, sendAmount },
+  });
+}
+
+// ── Transfers ─────────────────────────────────────────────────────────────────
 
 export interface Transfer {
   id: string;
@@ -66,6 +98,22 @@ export interface Transfer {
   receiveAmount: MoneyView;
   createdAt: string;
   updatedAt: string;
+}
+
+export function createTransfer(quoteId: string, userId: string, idempotencyKey: string) {
+  return request<Transfer>("/v1/transfers", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: { quoteId, userId },
+  });
+}
+
+export function getTransfer(id: string) {
+  return request<Transfer>(`/v1/transfers/${id}`);
+}
+
+export function listTransfers(userId: string) {
+  return request<Transfer[]>(`/v1/transfers?userId=${userId}`);
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
