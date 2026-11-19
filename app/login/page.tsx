@@ -31,11 +31,11 @@ function LoginForm() {
     setRetryAfter(0);
     setLoading(true);
     try {
-      const { token } = await login(email, password);
+      const { token, refreshToken } = await login(email, password);
       const payload = JSON.parse(atob(token.split(".")[1]));
       localStorage.setItem("remit_token", token);
       const userProfile = await getUser(payload.sub);
-      setAuth(userProfile, token);
+      setAuth(userProfile, token, refreshToken);
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {

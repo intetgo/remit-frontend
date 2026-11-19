@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { getUser, type User } from "./api";
+import { getUser, logoutApi, type User } from "./api";
 
 interface AuthState {
   user: User | null;
   token: string | null;
   authLoading: boolean;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User, token: string, refreshToken?: string) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -36,16 +36,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthLoading(false);
   }, []);
 
-  function setAuth(u: User, t: string) {
+  function setAuth(u: User, t: string, refreshToken?: string) {
     localStorage.setItem("remit_user", JSON.stringify(u));
     localStorage.setItem("remit_token", t);
+    if (refreshToken) localStorage.setItem("remit_refresh_token", refreshToken);
     setUser(u);
     setToken(t);
   }
 
   function logout() {
+    const refreshToken = localStorage.getItem("remit_refresh_token");
+    if (refreshToken) logoutApi(refreshToken).catch(() => {});
     localStorage.removeItem("remit_user");
     localStorage.removeItem("remit_token");
+    localStorage.removeItem("remit_refresh_token");
     setUser(null);
     setToken(null);
   }

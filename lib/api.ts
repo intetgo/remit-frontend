@@ -2,6 +2,28 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 type FetchOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
+let isRefreshing = false;
+let refreshQueue: Array<(token: string | null) => void> = [];
+
+async function attemptRefresh(): Promise<string | null> {
+  const refreshToken = typeof window !== "undefined" ? localStorage.getItem("remit_refresh_token") : null;
+  if (!refreshToken) return null;
+  try {
+    const res = await fetch(`${BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    localStorage.setItem("remit_token", data.token);
+    localStorage.setItem("remit_refresh_token", data.refreshToken);
+    return data.token as string;
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(path: string, opts: FetchOptions = {}): Promise<T> {
   const { body, headers, ...rest } = opts;
   const token = typeof window !== "undefined" ? localStorage.getItem("remit_token") : null;
@@ -17,12 +39,42 @@ async function request<T>(path: string, opts: FetchOptions = {}): Promise<T> {
   });
 
   if (!res.ok) {
-    if (res.status === 401 && path !== "/auth/token") {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("remit_token");
-        localStorage.removeItem("remit_user");
-        window.location.href = "/login?expired=1";
+    const isAuthPath = path === "/auth/token" || path === "/auth/refresh";
+    if (res.status === 401 && !isAuthPath && typeof window !== "undefined") {
+      // Try refreshing once
+      let newToken: string | null = null;
+      if (isRefreshing) {
+        newToken = await new Promise<string | null>(resolve => refreshQueue.push(resolve));
+      } else {
+        isRefreshing = true;
+        newToken = await attemptRefresh();
+        refreshQueue.forEach(resolve => resolve(newToken));
+        refreshQueue = [];
+        isRefreshing = false;
       }
+
+      if (newToken) {
+        // Retry original request with new token
+        const retry = await fetch(`${BASE}${path}`, {
+          ...rest,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${newToken}`,
+            ...headers,
+          },
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+        if (retry.ok) {
+          if (retry.status === 204) return undefined as T;
+          return retry.json() as Promise<T>;
+        }
+      }
+
+      // Refresh failed — clear session and redirect
+      localStorage.removeItem("remit_token");
+      localStorage.removeItem("remit_refresh_token");
+      localStorage.removeItem("remit_user");
+      window.location.href = "/login?expired=1";
       throw new ApiError(401, "Session expired");
     }
     const err = await res.json().catch(() => ({ message: res.statusText }));
@@ -124,10 +176,14 @@ export function resetPassword(token: string, password: string) {
 }
 
 export function login(email: string, password: string) {
-  return request<{ token: string; tokenType: string; expiresIn: number }>(
+  return request<{ token: string; tokenType: string; expiresIn: number; refreshToken: string }>(
     "/auth/token",
     { method: "POST", body: { email, password } }
   );
+}
+
+export function logoutApi(refreshToken: string) {
+  return request<void>("/auth/logout", { method: "POST", body: { refreshToken } });
 }
 
 // ── Quotes ────────────────────────────────────────────────────────────────────
