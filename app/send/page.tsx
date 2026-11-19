@@ -7,15 +7,63 @@ import { useAuth } from "@/lib/auth";
 import {
   getQuote,
   createTransfer,
+  createRecipient,
   listRecipients,
   listSavedCards,
   fundTransferByCard,
   CORRIDORS,
   type Quote,
   type Recipient,
+  type RecipientAccountType,
   type SavedCard,
   ApiError,
 } from "@/lib/api";
+
+const COUNTRY_OPTIONS = [
+  { code: "PH", label: "Philippines" },
+  { code: "IN", label: "India" },
+  { code: "VN", label: "Vietnam" },
+  { code: "ID", label: "Indonesia" },
+  { code: "CN", label: "China" },
+];
+
+const ACCOUNT_TYPES: Record<string, { value: RecipientAccountType; label: string }[]> = {
+  PH: [
+    { value: "BANK",          label: "Bank Deposit" },
+    { value: "MOBILE_WALLET", label: "Mobile Wallet" },
+  ],
+};
+const DEFAULT_ACCOUNT_TYPES: { value: RecipientAccountType; label: string }[] = [
+  { value: "BANK", label: "Bank Deposit" },
+];
+
+const PH_BANKS = [
+  { code: "BDO",        label: "BDO Unibank" },
+  { code: "BPI",        label: "Bank of the Philippine Islands" },
+  { code: "METROBANK",  label: "Metrobank" },
+  { code: "PNB",        label: "Philippine National Bank" },
+  { code: "SECURITYBANK", label: "Security Bank" },
+  { code: "UNIONBANK",  label: "UnionBank" },
+  { code: "RCBC",       label: "RCBC" },
+  { code: "CHINABANK",  label: "China Banking Corporation" },
+  { code: "LANDBANK",   label: "Land Bank of the Philippines" },
+];
+
+const PH_MOBILE_WALLETS = [
+  { code: "GCASH",     label: "GCash" },
+  { code: "MAYA",      label: "Maya" },
+  { code: "SHOPEEPAY", label: "ShopeePay" },
+  { code: "GRABPAY",   label: "GrabPay" },
+];
+
+const BLANK_RECIPIENT = {
+  fullName: "",
+  country: "PH",
+  accountType: "BANK" as RecipientAccountType,
+  bankCode: "",
+  accountNumber: "",
+  nickname: "",
+};
 import AppHeader from "@/components/AppHeader";
 
 type Step = "recipient" | "quote" | "confirm" | "done";
@@ -55,6 +103,12 @@ export default function SendPage() {
   const [cardFunding, setCardFunding] = useState(false);
   const [cardFundingError, setCardFundingError] = useState("");
   const [cardFunded, setCardFunded] = useState(false);
+
+  // Inline add-recipient form state
+  const [showAddRecipient, setShowAddRecipient] = useState(false);
+  const [newRecipient, setNewRecipient] = useState(BLANK_RECIPIENT);
+  const [addingRecipient, setAddingRecipient] = useState(false);
+  const [addRecipientError, setAddRecipientError] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -135,6 +189,30 @@ export default function SendPage() {
     }
   }
 
+  async function handleAddRecipient(e: React.FormEvent) {
+    e.preventDefault();
+    setAddingRecipient(true);
+    setAddRecipientError("");
+    try {
+      const created = await createRecipient({
+        fullName: newRecipient.fullName,
+        country: newRecipient.country,
+        accountType: newRecipient.accountType,
+        bankCode: newRecipient.bankCode || undefined,
+        accountNumber: newRecipient.accountNumber,
+        nickname: newRecipient.nickname || undefined,
+      });
+      setRecipients(rs => [...rs, created]);
+      setSelectedRecipient(created);
+      setShowAddRecipient(false);
+      setNewRecipient(BLANK_RECIPIENT);
+    } catch (err) {
+      setAddRecipientError(err instanceof ApiError ? err.message : "Failed to add recipient");
+    } finally {
+      setAddingRecipient(false);
+    }
+  }
+
   async function handlePayByCard() {
     if (!transfer || !selectedCardId) return;
     setCardFunding(true);
@@ -186,56 +264,178 @@ export default function SendPage() {
 
             {recipientsLoading ? (
               <p className="text-sm text-gray-400 text-center py-6">Loading…</p>
-            ) : recipients.length === 0 ? (
-              <div className="text-center py-8 space-y-3">
-                <p className="text-sm text-gray-500">You haven&apos;t added any recipients yet.</p>
-                <Link
-                  href="/recipients"
-                  className="inline-block text-sm font-medium text-indigo-600 hover:underline"
-                >
-                  Add a recipient →
-                </Link>
-              </div>
             ) : (
-              <ul className="space-y-2">
-                {recipients.map(r => (
-                  <li key={r.id}>
+              <>
+                {recipients.length > 0 && (
+                  <ul className="space-y-2">
+                    {recipients.map(r => (
+                      <li key={r.id}>
+                        <button
+                          onClick={() => { setSelectedRecipient(r); setShowAddRecipient(false); }}
+                          className={`w-full text-left rounded-xl border px-4 py-3 transition-colors ${
+                            selectedRecipient?.id === r.id
+                              ? "border-indigo-500 bg-indigo-50"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <p className="font-medium text-gray-900 text-sm">
+                            {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[r.accountType]} · {r.accountNumber} · {r.country}
+                          </p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {showAddRecipient ? (
+                  <form onSubmit={handleAddRecipient} className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-800">New recipient</p>
+                      <button
+                        type="button"
+                        onClick={() => { setShowAddRecipient(false); setAddRecipientError(""); setNewRecipient(BLANK_RECIPIENT); }}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <SendField label="Full name" required>
+                      <input
+                        required
+                        value={newRecipient.fullName}
+                        onChange={e => setNewRecipient(r => ({ ...r, fullName: e.target.value }))}
+                        placeholder="Maria Santos"
+                        className={sendInputCls}
+                      />
+                    </SendField>
+
+                    <SendField label="Nickname (optional)">
+                      <input
+                        value={newRecipient.nickname}
+                        onChange={e => setNewRecipient(r => ({ ...r, nickname: e.target.value }))}
+                        placeholder="Mum"
+                        className={sendInputCls}
+                      />
+                    </SendField>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <SendField label="Country" required>
+                        <select
+                          value={newRecipient.country}
+                          onChange={e => {
+                            const country = e.target.value;
+                            const types = ACCOUNT_TYPES[country] ?? DEFAULT_ACCOUNT_TYPES;
+                            const accountType = types.some(t => t.value === newRecipient.accountType)
+                              ? newRecipient.accountType : types[0].value;
+                            setNewRecipient(r => ({ ...r, country, accountType, bankCode: "" }));
+                          }}
+                          className={sendInputCls}
+                        >
+                          {COUNTRY_OPTIONS.map(c => (
+                            <option key={c.code} value={c.code}>{c.label}</option>
+                          ))}
+                        </select>
+                      </SendField>
+
+                      <SendField label="Type" required>
+                        <select
+                          value={newRecipient.accountType}
+                          onChange={e => setNewRecipient(r => ({ ...r, accountType: e.target.value as RecipientAccountType, bankCode: "" }))}
+                          className={sendInputCls}
+                        >
+                          {(ACCOUNT_TYPES[newRecipient.country] ?? DEFAULT_ACCOUNT_TYPES).map(t => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                      </SendField>
+                    </div>
+
+                    {newRecipient.country === "PH" && newRecipient.accountType === "BANK" ? (
+                      <SendField label="Bank" required>
+                        <select
+                          required
+                          value={newRecipient.bankCode}
+                          onChange={e => setNewRecipient(r => ({ ...r, bankCode: e.target.value }))}
+                          className={sendInputCls}
+                        >
+                          <option value="">Select bank</option>
+                          {PH_BANKS.map(b => (
+                            <option key={b.code} value={b.code}>{b.label}</option>
+                          ))}
+                        </select>
+                      </SendField>
+                    ) : newRecipient.country === "PH" && newRecipient.accountType === "MOBILE_WALLET" ? (
+                      <SendField label="Mobile wallet" required>
+                        <select
+                          required
+                          value={newRecipient.bankCode}
+                          onChange={e => setNewRecipient(r => ({ ...r, bankCode: e.target.value }))}
+                          className={sendInputCls}
+                        >
+                          <option value="">Select wallet</option>
+                          {PH_MOBILE_WALLETS.map(w => (
+                            <option key={w.code} value={w.code}>{w.label}</option>
+                          ))}
+                        </select>
+                      </SendField>
+                    ) : null}
+
+                    <SendField label="Account number" required>
+                      <input
+                        required
+                        value={newRecipient.accountNumber}
+                        onChange={e => setNewRecipient(r => ({ ...r, accountNumber: e.target.value }))}
+                        placeholder="1234567890"
+                        className={sendInputCls}
+                      />
+                    </SendField>
+
+                    {addRecipientError && (
+                      <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{addRecipientError}</p>
+                    )}
+
                     <button
-                      onClick={() => setSelectedRecipient(r)}
-                      className={`w-full text-left rounded-xl border px-4 py-3 transition-colors ${
-                        selectedRecipient?.id === r.id
-                          ? "border-indigo-500 bg-indigo-50"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
-                      }`}
+                      type="submit"
+                      disabled={addingRecipient}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
                     >
-                      <p className="font-medium text-gray-900 text-sm">
-                        {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[r.accountType]} · {r.accountNumber} · {r.country}
-                      </p>
+                      {addingRecipient ? "Saving…" : "Save & select"}
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                  </form>
+                ) : (
+                  <button
+                    onClick={() => { setShowAddRecipient(true); setSelectedRecipient(null); }}
+                    className="w-full rounded-xl border border-dashed border-gray-300 hover:border-indigo-400 text-sm font-medium text-indigo-600 hover:text-indigo-700 py-2.5 transition-colors"
+                  >
+                    + New recipient
+                  </button>
+                )}
 
-            {recipients.length > 0 && (
-              <Link
-                href="/recipients"
-                className="block text-center text-xs text-indigo-600 hover:underline"
-              >
-                Manage recipients
-              </Link>
+                {!showAddRecipient && (
+                  <>
+                    {recipients.length > 0 && (
+                      <Link
+                        href="/recipients"
+                        className="block text-center text-xs text-indigo-600 hover:underline"
+                      >
+                        Manage recipients
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => setStep("quote")}
+                      disabled={!selectedRecipient || user.kycTier === "UNVERIFIED"}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
+                    >
+                      Continue
+                    </button>
+                  </>
+                )}
+              </>
             )}
-
-            <button
-              onClick={() => setStep("quote")}
-              disabled={!selectedRecipient || user.kycTier === "UNVERIFIED"}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
-            >
-              Continue
-            </button>
           </div>
         )}
 
@@ -542,6 +742,19 @@ function Row({ label, value, bold, accent }: { label: string; value: string; bol
       <span className={`${bold ? "font-semibold" : "font-medium"} ${accent ? "text-indigo-700" : "text-gray-900"} text-right ml-4`}>
         {value}
       </span>
+    </div>
+  );
+}
+
+const sendInputCls = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent";
+
+function SendField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
     </div>
   );
 }
