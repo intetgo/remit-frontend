@@ -36,10 +36,37 @@ export class ApiError extends Error {
 export interface User {
   id: string;
   email: string;
+  phone: string | null;
   fullName: string;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  addressState: string | null;
+  postcode: string | null;
+  country: string | null;
   kycTier: string;
   monthlyLimitAudCents: number;
   createdAt: string;
+}
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  addressState?: string;
+  postcode?: string;
+  country?: string;
+}
+
+export function updateProfile(id: string, data: UpdateProfileRequest) {
+  return request<User>(`/v1/users/${id}`, { method: "PATCH", body: data });
 }
 
 export function register(email: string, fullName: string) {
