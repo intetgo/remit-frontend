@@ -19,11 +19,15 @@ const HAPPY_PATH: { status: string; label: string }[] = [
   { status: "COMPLETED",        label: "Completed" },
 ];
 
-const TERMINAL_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  FAILED:        { bg: "bg-red-100",    text: "text-red-700",    label: "Failed" },
-  CANCELLED:     { bg: "bg-gray-100",   text: "text-gray-600",   label: "Cancelled" },
-  REFUND_PENDING:{ bg: "bg-orange-100", text: "text-orange-700", label: "Refund pending" },
-  REFUNDED:      { bg: "bg-orange-100", text: "text-orange-700", label: "Refunded" },
+const TERMINAL_STYLES: Record<string, { bg: string; text: string; label: string; detail?: string }> = {
+  FAILED:        { bg: "bg-red-100",    text: "text-red-700",    label: "Failed",
+    detail: "This transfer failed during processing. If your payment method was charged, a refund will be initiated automatically." },
+  CANCELLED:     { bg: "bg-gray-100",   text: "text-gray-600",   label: "Cancelled",
+    detail: "This transfer was cancelled before it was funded. No payment was taken." },
+  REFUND_PENDING:{ bg: "bg-orange-100", text: "text-orange-700", label: "Refund pending",
+    detail: "Your transfer was flagged during compliance review and could not be processed. Your funds are being returned to your original payment method." },
+  REFUNDED:      { bg: "bg-green-50",   text: "text-green-700",  label: "Refunded",
+    detail: "Your refund has been processed. Funds have been returned to your original payment method." },
 };
 
 const STATUS_DOT: Record<string, string> = {
@@ -230,8 +234,56 @@ export default function TransferDetailPage() {
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Progress</p>
 
               {isTerminal && terminalStyle ? (
-                <div className={`rounded-xl ${terminalStyle.bg} px-4 py-3 text-sm font-medium ${terminalStyle.text}`}>
-                  {terminalStyle.label}
+                <div className="space-y-4">
+                  {/* Explanatory callout */}
+                  <div className={`rounded-xl ${terminalStyle.bg} px-4 py-3 space-y-1`}>
+                    <p className={`text-sm font-semibold ${terminalStyle.text}`}>{terminalStyle.label}</p>
+                    {terminalStyle.detail && (
+                      <p className={`text-xs leading-relaxed ${terminalStyle.text} opacity-80`}>{terminalStyle.detail}</p>
+                    )}
+                  </div>
+
+                  {/* Refund path mini-timeline */}
+                  {(transfer.status === "REFUND_PENDING" || transfer.status === "REFUNDED") && (
+                    <ol className="space-y-0 pt-1">
+                      {[
+                        { label: "Transfer funded",        done: true,  icon: "✓" },
+                        { label: "Compliance review",      done: true,  icon: "✓" },
+                        { label: "Rejected by compliance", done: true,  icon: "✕", danger: true },
+                        { label: "Refund initiated",       done: true,  icon: "✓" },
+                        {
+                          label: transfer.status === "REFUNDED" ? "Refund complete" : "Refund processing",
+                          done: transfer.status === "REFUNDED",
+                          current: transfer.status === "REFUND_PENDING",
+                          icon: transfer.status === "REFUNDED" ? "✓" : "⟳",
+                        },
+                      ].map((s, i, arr) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <div className="flex flex-col items-center">
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                              s.danger   ? "bg-red-100 text-red-600" :
+                              s.current  ? "bg-orange-100 text-orange-600 ring-4 ring-orange-50" :
+                              s.done     ? "bg-green-100 text-green-700" :
+                                           "bg-gray-100 text-gray-400"
+                            }`}>
+                              {s.icon}
+                            </span>
+                            {i < arr.length - 1 && (
+                              <div className={`w-0.5 h-5 ${s.done && !s.danger ? "bg-green-200" : s.danger ? "bg-red-100" : "bg-gray-100"}`} />
+                            )}
+                          </div>
+                          <span className={`text-sm pb-1 ${
+                            s.danger   ? "text-red-600 font-medium" :
+                            s.current  ? "text-orange-700 font-semibold" :
+                            s.done     ? "text-gray-500" :
+                                         "text-gray-300"
+                          }`}>
+                            {s.label}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
                 </div>
               ) : (
                 <ol className="space-y-0">
@@ -282,6 +334,16 @@ export default function TransferDetailPage() {
                   <span className="text-gray-500 shrink-0">Last updated</span>
                   <span className="text-gray-700 text-right">{absDate(transfer.updatedAt)}</span>
                 </div>
+                {(transfer.status === "REFUND_PENDING" || transfer.status === "REFUNDED") && (
+                  <div className="flex justify-between gap-4 pt-1 border-t border-gray-100 mt-1">
+                    <span className="text-gray-500 shrink-0">
+                      {transfer.status === "REFUNDED" ? "Refunded" : "Refund amount"}
+                    </span>
+                    <span className="font-semibold text-green-700 text-right">
+                      {fmt((Number(transfer.sendAmount.amount) + Number(transfer.feeAmount.amount)).toFixed(2), "AUD")}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
