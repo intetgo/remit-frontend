@@ -31,8 +31,14 @@ export default function DashboardPage() {
         </p>
 
         {!kycOk && (
-          <div className="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-            Your identity hasn&apos;t been verified yet. KYC is required before you can send money.
+          <div className="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 flex items-center justify-between gap-4">
+            <span>Your identity hasn&apos;t been verified yet. KYC is required before you can send money.</span>
+            <Link
+              href="/kyc"
+              className="shrink-0 font-medium underline underline-offset-2 hover:text-amber-900"
+            >
+              Verify identity →
+            </Link>
           </div>
         )}
 

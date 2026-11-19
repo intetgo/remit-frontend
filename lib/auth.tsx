@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { User } from "./api";
+import { getUser, type User } from "./api";
 
 interface AuthState {
   user: User | null;
@@ -9,6 +9,7 @@ interface AuthState {
   authLoading: boolean;
   setAuth: (user: User, token: string) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthState>({
   authLoading: true,
   setAuth: () => {},
   logout: () => {},
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -48,8 +50,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
   }
 
+  async function refreshUser() {
+    if (!user) return;
+    const updated = await getUser(user.id);
+    localStorage.setItem("remit_user", JSON.stringify(updated));
+    setUser(updated);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, authLoading, setAuth, logout }}>
+    <AuthContext.Provider value={{ user, token, authLoading, setAuth, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
