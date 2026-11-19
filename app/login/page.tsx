@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login, getUser, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const expired = searchParams.get("expired") === "1";
   const { setAuth, user, authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +29,6 @@ export default function LoginPage() {
     try {
       const { token } = await login(email, password);
       const payload = JSON.parse(atob(token.split(".")[1]));
-      // Store token first so getUser() request is authenticated
       localStorage.setItem("remit_token", token);
       const userProfile = await getUser(payload.sub);
       setAuth(userProfile, token);
@@ -46,6 +47,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold text-gray-900">Welcome back</h1>
           <p className="mt-1 text-sm text-gray-500">Sign in to your Remit account</p>
         </div>
+
+        {expired && (
+          <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            Your session expired. Please sign in again.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
           <div>
@@ -99,5 +106,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -17,6 +17,14 @@ async function request<T>(path: string, opts: FetchOptions = {}): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401 && path !== "/auth/token") {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("remit_token");
+        localStorage.removeItem("remit_user");
+        window.location.href = "/login?expired=1";
+      }
+      throw new ApiError(401, "Session expired");
+    }
     const err = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, err.message ?? res.statusText, err);
   }
