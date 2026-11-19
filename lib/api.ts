@@ -57,6 +57,7 @@ export interface User {
   country: string | null;
   kycTier: string;
   monthlyLimitAudCents: number;
+  emailVerifiedAt: string | null;
   createdAt: string;
 }
 
@@ -90,6 +91,14 @@ export function changePassword(userId: string, currentPassword: string, newPassw
     method: "POST",
     body: { currentPassword, newPassword },
   });
+}
+
+export function verifyEmail(token: string) {
+  return request<void>(`/auth/verify-email?token=${encodeURIComponent(token)}`, { method: "POST" });
+}
+
+export function resendVerification(email: string) {
+  return request<void>("/auth/resend-verification", { method: "POST", body: { email } });
 }
 
 export function forgotPassword(email: string) {

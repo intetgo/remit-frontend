@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { listTransfers, listRecipients, listSavedCards, type Transfer } from "@/lib/api";
+import { listTransfers, listRecipients, listSavedCards, resendVerification, type Transfer } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
 
 const TERMINAL = new Set(["COMPLETED", "FAILED", "CANCELLED", "REFUNDED", "PAYOUT_SENT"]);
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [hasRecipient, setHasRecipient] = useState(false);
   const [hasCard, setHasCard] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [resendSent, setResendSent] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -106,11 +107,39 @@ export default function DashboardPage() {
   const completedThisMonth = monthlyTransfers.filter(t => t.status === "COMPLETED").length;
   const recent = transfers.slice(0, 4);
 
+  async function handleResend() {
+    await resendVerification(user!.email).catch(() => {});
+    setResendSent(true);
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AppHeader />
 
       <main className="max-w-2xl mx-auto px-5 py-10 space-y-8">
+
+        {/* Email verification banner */}
+        {!user.emailVerifiedAt && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-amber-900">Please verify your email address</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                We sent a link to <span className="font-medium">{user.email}</span>. Check your inbox or{" "}
+                <a href="http://localhost:8025" target="_blank" rel="noopener noreferrer" className="underline">
+                  open MailHog
+                </a>
+                .
+              </p>
+            </div>
+            <button
+              onClick={handleResend}
+              disabled={resendSent}
+              className="shrink-0 text-xs font-medium text-amber-800 underline disabled:no-underline disabled:text-amber-500"
+            >
+              {resendSent ? "Sent!" : "Resend"}
+            </button>
+          </div>
+        )}
 
         {/* Greeting */}
         <div>
