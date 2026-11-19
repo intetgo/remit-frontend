@@ -26,7 +26,6 @@ const ACCOUNT_TYPES: Record<string, { value: RecipientAccountType; label: string
   PH: [
     { value: "BANK", label: "Bank Deposit" },
     { value: "MOBILE_WALLET", label: "Mobile Wallet" },
-    { value: "CASH_PICKUP", label: "Cash Pickup" },
   ],
 };
 const DEFAULT_ACCOUNT_TYPES: { value: RecipientAccountType; label: string }[] = [
@@ -287,7 +286,7 @@ export default function RecipientsPage() {
                     {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[r.accountType]} · {r.bankCode ? `${r.bankCode} · ` : ""}{r.accountNumber} · {r.country}
+                    {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[r.accountType] ?? r.accountType} · {r.bankCode ? `${r.bankCode} · ` : ""}{r.accountNumber} · {r.country}
                   </p>
                 </div>
                 <div className="shrink-0 flex items-center gap-3">
