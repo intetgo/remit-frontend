@@ -54,12 +54,17 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
     if (!open) await load();
   }
 
-  async function handleMarkRead(n: Notification) {
-    if (n.read) return;
-    try {
-      await markNotificationRead(n.id);
-      setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x));
-    } catch {}
+  async function handleClick(n: Notification) {
+    if (!n.read) {
+      try {
+        await markNotificationRead(n.id);
+        setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x));
+      } catch {}
+    }
+    if (n.transferId) {
+      setOpen(false);
+      router.push(`/transfers/${n.transferId}`);
+    }
   }
 
   async function handleMarkAll() {
@@ -114,8 +119,8 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
                     {notifications.map(n => (
                       <li
                         key={n.id}
-                        onClick={() => handleMarkRead(n)}
-                        className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${!n.read ? "bg-indigo-50/40" : ""}`}
+                        onClick={() => handleClick(n)}
+                        className={`px-4 py-3 transition-colors ${n.transferId ? "cursor-pointer hover:bg-gray-50" : "cursor-default"} ${!n.read ? "bg-indigo-50/40" : ""}`}
                       >
                         <div className="flex items-start gap-2.5">
                           <span className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? "bg-indigo-500" : "bg-transparent"}`} />
