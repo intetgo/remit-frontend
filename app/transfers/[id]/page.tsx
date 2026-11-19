@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { getTransfer, listRecipients, type Transfer, type Recipient } from "@/lib/api";
+import { getTransfer, listRecipients, cancelTransfer, type Transfer, type Recipient, ApiError } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
 
 // Happy path in order
@@ -55,6 +55,9 @@ export default function TransferDetailPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -83,14 +86,62 @@ export default function TransferDetailPage() {
 
   if (authLoading || !user) return null;
 
+  const CANCELLABLE = new Set(["CREATED", "QUOTE_LOCKED", "FUNDING_PENDING"]);
+
+  async function handleCancel() {
+    if (!transfer) return;
+    setCancelling(true);
+    setCancelError("");
+    try {
+      const updated = await cancelTransfer(transfer.id);
+      setTransfer(updated);
+      setConfirmCancel(false);
+    } catch (e) {
+      setCancelError(e instanceof ApiError ? e.message : "Could not cancel transfer");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   const happyIndex = transfer ? HAPPY_PATH.findIndex(s => s.status === transfer.status) : -1;
   const isTerminal = transfer ? transfer.status in TERMINAL_STYLES : false;
   const terminalStyle = transfer ? TERMINAL_STYLES[transfer.status] : null;
   const destCurrency = transfer?.receiveAmount.currency ?? "";
+  const canCancel = transfer ? CANCELLABLE.has(transfer.status) : false;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <AppHeader />
+
+      {confirmCancel && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <h3 className="font-semibold text-gray-900">Cancel this transfer?</h3>
+            <p className="text-sm text-gray-500">
+              The transfer will be cancelled and no money will be sent. This cannot be undone.
+            </p>
+            {cancelError && (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{cancelError}</p>
+            )}
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex-1 text-sm font-medium rounded-lg px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white transition-colors"
+              >
+                {cancelling ? "Cancelling…" : "Yes, cancel transfer"}
+              </button>
+              <button
+                onClick={() => { setConfirmCancel(false); setCancelError(""); }}
+                disabled={cancelling}
+                className="flex-1 text-sm font-medium rounded-lg px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Keep transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-lg mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
@@ -148,6 +199,17 @@ export default function TransferDetailPage() {
                   1 AUD = {(Number(transfer.receiveAmount.amount) / Number(transfer.sendAmount.amount)).toFixed(4)} {destCurrency}
                 </span>
               </div>
+
+              {canCancel && (
+                <div className="pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => setConfirmCancel(true)}
+                    className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+                  >
+                    Cancel transfer
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Recipient */}

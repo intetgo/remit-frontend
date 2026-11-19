@@ -139,6 +139,10 @@ export function getTransfer(id: string) {
   return request<Transfer>(`/v1/transfers/${id}`);
 }
 
+export function cancelTransfer(id: string) {
+  return request<Transfer>(`/v1/transfers/${id}/cancel`, { method: "POST" });
+}
+
 export function listTransfers(userId: string) {
   return request<Transfer[]>(`/v1/transfers?userId=${userId}`);
 }
