@@ -100,11 +100,11 @@ export interface Transfer {
   updatedAt: string;
 }
 
-export function createTransfer(quoteId: string, userId: string, idempotencyKey: string) {
+export function createTransfer(quoteId: string, userId: string, idempotencyKey: string, recipientId?: string) {
   return request<Transfer>("/v1/transfers", {
     method: "POST",
     headers: { "Idempotency-Key": idempotencyKey },
-    body: { quoteId, userId },
+    body: { quoteId, userId, ...(recipientId ? { recipientId } : {}) },
   });
 }
 
@@ -114,6 +114,44 @@ export function getTransfer(id: string) {
 
 export function listTransfers(userId: string) {
   return request<Transfer[]>(`/v1/transfers?userId=${userId}`);
+}
+
+// ── Recipients ────────────────────────────────────────────────────────────────
+
+export type RecipientAccountType = "BANK" | "MOBILE_WALLET";
+
+export interface Recipient {
+  id: string;
+  userId: string;
+  fullName: string;
+  country: string;
+  accountType: RecipientAccountType;
+  bankCode: string | null;
+  accountNumber: string;
+  nickname: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRecipientRequest {
+  fullName: string;
+  country: string;
+  accountType: RecipientAccountType;
+  bankCode?: string;
+  accountNumber: string;
+  nickname?: string;
+}
+
+export function listRecipients() {
+  return request<Recipient[]>("/v1/recipients");
+}
+
+export function createRecipient(data: CreateRecipientRequest) {
+  return request<Recipient>("/v1/recipients", { method: "POST", body: data });
+}
+
+export function deleteRecipient(id: string) {
+  return request<void>(`/v1/recipients/${id}`, { method: "DELETE" });
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────

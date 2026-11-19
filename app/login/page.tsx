@@ -8,16 +8,16 @@ import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuth, user } = useAuth();
+  const { setAuth, user, authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) router.replace("/dashboard");
-  }, [user, router]);
+    if (!authLoading && user) router.replace("/dashboard");
+  }, [user, authLoading, router]);
 
-  if (user) return null;
+  if (authLoading || user) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

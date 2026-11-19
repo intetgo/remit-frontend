@@ -6,6 +6,7 @@ import type { User } from "./api";
 interface AuthState {
   user: User | null;
   token: string | null;
+  authLoading: boolean;
   setAuth: (user: User, token: string) => void;
   logout: () => void;
 }
@@ -13,6 +14,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState>({
   user: null,
   token: null,
+  authLoading: true,
   setAuth: () => {},
   logout: () => {},
 });
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthState>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem("remit_user");
@@ -28,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(JSON.parse(stored));
       setToken(storedToken);
     }
+    setAuthLoading(false);
   }, []);
 
   function setAuth(u: User, t: string) {
@@ -45,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, setAuth, logout }}>
+    <AuthContext.Provider value={{ user, token, authLoading, setAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

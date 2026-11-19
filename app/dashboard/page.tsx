@@ -6,14 +6,14 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    if (!authLoading && !user) router.replace("/login");
+  }, [user, authLoading, router]);
 
-  if (!user) return null;
+  if (authLoading || !user) return null;
 
   const kycOk = user.kycTier !== "UNVERIFIED";
 
@@ -57,11 +57,14 @@ export default function DashboardPage() {
             <span className="text-xs text-indigo-200">Get a live rate and send</span>
           </Link>
 
-          <div className="flex flex-col gap-1 bg-white border border-gray-100 rounded-2xl p-5 text-gray-400">
-            <span className="text-2xl">📋</span>
-            <span className="font-semibold text-gray-700">Transfers</span>
-            <span className="text-xs">Coming soon</span>
-          </div>
+          <Link
+            href="/recipients"
+            className="flex flex-col gap-1 bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm rounded-2xl p-5 transition-all"
+          >
+            <span className="text-2xl">👤</span>
+            <span className="font-semibold text-gray-700">Recipients</span>
+            <span className="text-xs text-gray-400">Manage beneficiaries</span>
+          </Link>
         </div>
       </main>
     </div>
