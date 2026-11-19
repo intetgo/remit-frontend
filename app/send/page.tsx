@@ -8,9 +8,12 @@ import {
   getQuote,
   createTransfer,
   listRecipients,
+  listSavedCards,
+  fundTransferByCard,
   CORRIDORS,
   type Quote,
   type Recipient,
+  type SavedCard,
   ApiError,
 } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
@@ -45,6 +48,13 @@ export default function SendPage() {
   const [error, setError] = useState("");
   const [secsLeft, setSecsLeft] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [fundingMethod, setFundingMethod] = useState<"bank" | "card">("bank");
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [cardFunding, setCardFunding] = useState(false);
+  const [cardFundingError, setCardFundingError] = useState("");
+  const [cardFunded, setCardFunded] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -112,11 +122,30 @@ export default function SendPage() {
         selectedRecipient?.id,
       );
       setTransfer(t);
+      setCardFunded(false);
+      setCardFundingError("");
+      setFundingMethod("bank");
+      setSelectedCardId(null);
       setStep("done");
+      listSavedCards().then(setSavedCards).catch(() => {});
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Transfer failed");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePayByCard() {
+    if (!transfer || !selectedCardId) return;
+    setCardFunding(true);
+    setCardFundingError("");
+    try {
+      await fundTransferByCard(transfer.id, selectedCardId);
+      setCardFunded(true);
+    } catch (err) {
+      setCardFundingError(err instanceof ApiError ? err.message : "Card payment failed");
+    } finally {
+      setCardFunding(false);
     }
   }
 
@@ -355,44 +384,127 @@ export default function SendPage() {
         {step === "done" && transfer && quote && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <div className="text-center space-y-2">
-              <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-2xl">✓</div>
-              <h2 className="text-lg font-semibold text-gray-900">Transfer created!</h2>
-              <p className="text-sm text-gray-500">Now fund your transfer to get it moving.</p>
+              <div className={`mx-auto w-14 h-14 rounded-full flex items-center justify-center text-2xl ${cardFunded ? "bg-green-100" : "bg-green-100"}`}>✓</div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {cardFunded ? "Transfer funded!" : "Transfer created!"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {cardFunded ? "Your card was charged. The transfer is on its way." : "Choose how you'd like to fund this transfer."}
+              </p>
             </div>
 
-            {/* Funding instructions */}
-            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 space-y-3">
-              <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">How to fund your transfer</p>
-              <p className="text-sm text-gray-700">
-                Make a bank transfer of{" "}
-                <span className="font-semibold">
-                  {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" })
-                    .format(Number(quote.sendAmount.amount) + Number(quote.feeAmount.amount))}
-                </span>{" "}
-                to:
-              </p>
-              <div className="rounded-lg bg-white border border-indigo-100 px-4 py-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Bank</span>
-                  <span className="font-medium text-gray-900">Remit AU (simulated)</span>
+            {!cardFunded && (
+              <>
+                {/* Funding method tabs */}
+                <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setFundingMethod("bank")}
+                    className={`flex-1 py-2.5 text-sm font-medium transition-colors ${fundingMethod === "bank" ? "bg-indigo-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                  >
+                    🏦 Bank transfer
+                  </button>
+                  <button
+                    onClick={() => setFundingMethod("card")}
+                    className={`flex-1 py-2.5 text-sm font-medium transition-colors border-l border-gray-200 ${fundingMethod === "card" ? "bg-indigo-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                  >
+                    💳 Pay by card
+                  </button>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">BSB</span>
-                  <span className="font-mono font-medium text-gray-900">062-000</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Account</span>
-                  <span className="font-mono font-medium text-gray-900">10000001</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Reference</span>
-                  <span className="font-mono font-medium text-gray-900">REMIT-{transfer.id.slice(0, 8).toUpperCase()}</span>
-                </div>
-              </div>
-              <p className="text-xs text-indigo-700">
-                Use the reference exactly as shown — it links your payment to this transfer.
-              </p>
-            </div>
+
+                {fundingMethod === "bank" && (
+                  <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 space-y-3">
+                    <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Bank transfer details</p>
+                    <p className="text-sm text-gray-700">
+                      Transfer{" "}
+                      <span className="font-semibold">
+                        {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" })
+                          .format(Number(quote.sendAmount.amount) + Number(quote.feeAmount.amount))}
+                      </span>{" "}
+                      to:
+                    </p>
+                    <div className="rounded-lg bg-white border border-indigo-100 px-4 py-3 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Bank</span>
+                        <span className="font-medium text-gray-900">Remit AU (simulated)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">BSB</span>
+                        <span className="font-mono font-medium text-gray-900">062-000</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Account</span>
+                        <span className="font-mono font-medium text-gray-900">10000001</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Reference</span>
+                        <span className="font-mono font-medium text-gray-900">REMIT-{transfer.id.slice(0, 8).toUpperCase()}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-indigo-700">Use the reference exactly as shown.</p>
+                  </div>
+                )}
+
+                {fundingMethod === "card" && (
+                  <div className="space-y-3">
+                    {savedCards.length === 0 ? (
+                      <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-center space-y-2">
+                        <p className="text-sm text-gray-600">No saved cards yet.</p>
+                        <Link
+                          href="/payment-methods"
+                          className="text-sm text-indigo-600 font-medium hover:underline"
+                        >
+                          Add a card →
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-500">Select a saved card:</p>
+                        <ul className="space-y-2">
+                          {savedCards.map(card => (
+                            <li key={card.id}>
+                              <button
+                                onClick={() => setSelectedCardId(card.id)}
+                                className={`w-full text-left rounded-xl border px-4 py-3 transition-colors flex items-center gap-3 ${
+                                  selectedCardId === card.id
+                                    ? "border-indigo-500 bg-indigo-50"
+                                    : "border-gray-200 hover:border-gray-300 bg-white"
+                                }`}
+                              >
+                                <span className="text-xl">💳</span>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900 capitalize">
+                                    {card.brand} •••• {card.last4}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Expires {String(card.expMonth).padStart(2, "0")}/{card.expYear}
+                                  </p>
+                                </div>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <Link
+                          href="/payment-methods"
+                          className="block text-center text-xs text-indigo-600 hover:underline"
+                        >
+                          Manage cards
+                        </Link>
+                        {cardFundingError && (
+                          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{cardFundingError}</p>
+                        )}
+                        <button
+                          onClick={handlePayByCard}
+                          disabled={!selectedCardId || cardFunding}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
+                        >
+                          {cardFunding ? "Charging card…" : `Pay ${new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(quote.sendAmount.amount) + Number(quote.feeAmount.amount))} now`}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Transfer summary */}
             <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2 text-sm">

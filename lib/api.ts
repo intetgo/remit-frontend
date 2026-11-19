@@ -206,6 +206,43 @@ export function markAllNotificationsRead() {
   return request<void>("/v1/notifications/read-all", { method: "PATCH" });
 }
 
+// ── Payment Methods ───────────────────────────────────────────────────────────
+
+export interface SavedCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  createdAt: string;
+}
+
+export function getSetupIntent() {
+  return request<{ clientSecret: string }>("/v1/payment-methods/setup-intent", { method: "POST" });
+}
+
+export function saveCard(stripePaymentMethodId: string) {
+  return request<SavedCard>("/v1/payment-methods", {
+    method: "POST",
+    body: { stripePaymentMethodId },
+  });
+}
+
+export function listSavedCards() {
+  return request<SavedCard[]>("/v1/payment-methods");
+}
+
+export function deleteSavedCard(id: string) {
+  return request<void>(`/v1/payment-methods/${id}`, { method: "DELETE" });
+}
+
+export function fundTransferByCard(transferId: string, savedCardId: string) {
+  return request<{ status: string; paymentIntentId: string }>(
+    `/v1/transfers/${transferId}/fund/card`,
+    { method: "POST", body: { savedCardId } }
+  );
+}
+
 // ── Sim / prototype controls ──────────────────────────────────────────────────
 
 async function simRequest<T>(path: string, opts: FetchOptions = {}): Promise<T> {
