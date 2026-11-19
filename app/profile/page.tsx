@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { updateProfile, type UpdateProfileRequest } from "@/lib/api";
+import { updateProfile, changePassword, type UpdateProfileRequest, ApiError } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
 
 export default function ProfilePage() {
@@ -26,6 +26,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSaved, setPwSaved] = useState(false);
+  const [pwError, setPwError] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -83,6 +88,28 @@ export default function ProfilePage() {
       setError("Failed to save profile. Please try again.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwError("");
+    setPwSaved(false);
+    if (pwForm.next !== pwForm.confirm) { setPwError("Passwords do not match"); return; }
+    if (pwForm.next.length < 8) { setPwError("New password must be at least 8 characters"); return; }
+    setPwSaving(true);
+    try {
+      await changePassword(user!.id, pwForm.current, pwForm.next);
+      setPwForm({ current: "", next: "", confirm: "" });
+      setPwSaved(true);
+    } catch (err) {
+      setPwError(
+        err instanceof ApiError && err.status === 401
+          ? "Current password is incorrect"
+          : err instanceof ApiError ? err.message : "Failed to change password"
+      );
+    } finally {
+      setPwSaving(false);
     }
   }
 
@@ -220,6 +247,40 @@ export default function ProfilePage() {
           >
             {saving ? "Saving…" : "Save profile"}
           </button>
+        </form>
+
+        {/* Change password */}
+        <form onSubmit={handleChangePassword} className="mt-6 space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <h2 className="text-sm font-semibold text-gray-700">Change password</h2>
+
+            <div>
+              <label className={labelCls} htmlFor="currentPassword">Current password</label>
+              <input id="currentPassword" type="password" required value={pwForm.current}
+                onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))}
+                placeholder="••••••••" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="newPassword">New password</label>
+              <input id="newPassword" type="password" required minLength={8} value={pwForm.next}
+                onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))}
+                placeholder="Min. 8 characters" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="confirmNewPassword">Confirm new password</label>
+              <input id="confirmNewPassword" type="password" required value={pwForm.confirm}
+                onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))}
+                placeholder="••••••••" className={inputCls} />
+            </div>
+
+            {pwError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{pwError}</p>}
+            {pwSaved && <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">Password updated.</p>}
+
+            <button type="submit" disabled={pwSaving}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors">
+              {pwSaving ? "Updating…" : "Update password"}
+            </button>
+          </div>
         </form>
       </main>
     </div>

@@ -85,6 +85,13 @@ export function getUser(id: string) {
   return request<User>(`/v1/users/${id}`);
 }
 
+export function changePassword(userId: string, currentPassword: string, newPassword: string) {
+  return request<void>(`/v1/users/${userId}/password`, {
+    method: "POST",
+    body: { currentPassword, newPassword },
+  });
+}
+
 export function forgotPassword(email: string) {
   return request<{ message: string; resetUrl: string | null }>(
     "/auth/forgot-password",
