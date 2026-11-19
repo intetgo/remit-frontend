@@ -175,6 +175,10 @@ export function markNotificationRead(id: string) {
   return request<void>(`/v1/notifications/${id}/read`, { method: "PATCH" });
 }
 
+export function markAllNotificationsRead() {
+  return request<void>("/v1/notifications/read-all", { method: "PATCH" });
+}
+
 // ── Sim / prototype controls ──────────────────────────────────────────────────
 
 async function simRequest<T>(path: string, opts: FetchOptions = {}): Promise<T> {

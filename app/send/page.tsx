@@ -13,6 +13,7 @@ import {
   type Recipient,
   ApiError,
 } from "@/lib/api";
+import AppHeader from "@/components/AppHeader";
 
 type Step = "recipient" | "quote" | "confirm" | "done";
 
@@ -99,10 +100,7 @@ export default function SendPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-semibold text-indigo-600">Remit</Link>
-        <span className="text-sm text-gray-500">{user.email}</span>
-      </header>
+      <AppHeader />
 
       <main className="max-w-md mx-auto px-4 py-10">
         {/* Step indicator */}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import AppHeader from "@/components/AppHeader";
 import {
   listTransfers,
   listComplianceCases,
@@ -126,12 +127,7 @@ export default function SimPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-semibold text-indigo-600">Remit</Link>
-        <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full">
-          ⚠ Prototype controls
-        </span>
-      </header>
+      <AppHeader />
 
       {/* Toast */}
       {toast && (

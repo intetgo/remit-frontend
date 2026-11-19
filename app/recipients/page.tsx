@@ -12,6 +12,7 @@ import {
   type RecipientAccountType,
   ApiError,
 } from "@/lib/api";
+import AppHeader from "@/components/AppHeader";
 
 const COUNTRY_OPTIONS = [
   { code: "PH", label: "Philippines" },
@@ -92,10 +93,7 @@ export default function RecipientsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-semibold text-indigo-600">Remit</Link>
-        <span className="text-sm text-gray-500">{user.email}</span>
-      </header>
+      <AppHeader />
 
       <main className="max-w-2xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">

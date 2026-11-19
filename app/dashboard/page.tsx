@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import AppHeader from "@/components/AppHeader";
 
 export default function DashboardPage() {
   const { user, logout, authLoading } = useAuth();
@@ -19,18 +20,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <span className="text-lg font-semibold text-indigo-600">Remit</span>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">{user.email}</span>
-          <button
-            onClick={() => { logout(); router.push("/login"); }}
-            className="text-sm text-gray-500 hover:text-gray-900"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         <h2 className="text-xl font-semibold text-gray-900 mb-1">
@@ -70,6 +60,12 @@ export default function DashboardPage() {
         <div className="flex gap-4 text-sm">
           <Link href="/recipients" className="text-indigo-600 hover:underline">Manage recipients</Link>
           <Link href="/sim" className="text-gray-400 hover:text-gray-600">Sim controls</Link>
+          <button
+            onClick={() => { logout(); router.push("/login"); }}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            Sign out
+          </button>
         </div>
       </main>
     </div>

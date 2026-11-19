@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { listTransfers, type Transfer } from "@/lib/api";
+import AppHeader from "@/components/AppHeader";
 
 const STATUS_STYLES: Record<string, { dot: string; label: string }> = {
   CREATED:          { dot: "bg-gray-400",   label: "Created" },
@@ -61,10 +62,7 @@ export default function TransfersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-semibold text-indigo-600">Remit</Link>
-        <span className="text-sm text-gray-500">{user.email}</span>
-      </header>
+      <AppHeader />
 
       <main className="max-w-2xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
