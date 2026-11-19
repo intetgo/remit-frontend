@@ -183,7 +183,7 @@ export default function SendPage() {
                         {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {r.accountType === "BANK" ? "Bank" : "Mobile wallet"} · {r.accountNumber} · {r.country}
+                        {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[r.accountType]} · {r.accountNumber} · {r.country}
                       </p>
                     </button>
                   </li>

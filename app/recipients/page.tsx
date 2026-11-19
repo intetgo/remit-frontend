@@ -22,6 +22,17 @@ const COUNTRY_OPTIONS = [
   { code: "CN", label: "China" },
 ];
 
+const ACCOUNT_TYPES: Record<string, { value: RecipientAccountType; label: string }[]> = {
+  PH: [
+    { value: "BANK", label: "Bank Deposit" },
+    { value: "MOBILE_WALLET", label: "Mobile Wallet" },
+    { value: "CASH_PICKUP", label: "Cash Pickup" },
+  ],
+};
+const DEFAULT_ACCOUNT_TYPES: { value: RecipientAccountType; label: string }[] = [
+  { value: "BANK", label: "Bank Deposit" },
+];
+
 const BLANK = {
   fullName: "",
   country: "PH",
@@ -134,7 +145,14 @@ export default function RecipientsPage() {
               <Field label="Country" required>
                 <select
                   value={form.country}
-                  onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+                  onChange={e => {
+                    const country = e.target.value;
+                    const types = ACCOUNT_TYPES[country] ?? DEFAULT_ACCOUNT_TYPES;
+                    const accountType = types.some(t => t.value === form.accountType)
+                      ? form.accountType
+                      : types[0].value;
+                    setForm(f => ({ ...f, country, accountType }));
+                  }}
                   className={inputCls}
                 >
                   {COUNTRY_OPTIONS.map(c => (
@@ -148,8 +166,9 @@ export default function RecipientsPage() {
                   onChange={e => setForm(f => ({ ...f, accountType: e.target.value as RecipientAccountType }))}
                   className={inputCls}
                 >
-                  <option value="BANK">Bank account</option>
-                  <option value="MOBILE_WALLET">Mobile wallet</option>
+                  {(ACCOUNT_TYPES[form.country] ?? DEFAULT_ACCOUNT_TYPES).map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
                 </select>
               </Field>
             </div>
@@ -204,7 +223,7 @@ export default function RecipientsPage() {
                     {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {r.accountType === "BANK" ? "Bank" : "Mobile wallet"} · {r.bankCode ? `${r.bankCode} · ` : ""}{r.accountNumber} · {r.country}
+                    {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[r.accountType]} · {r.bankCode ? `${r.bankCode} · ` : ""}{r.accountNumber} · {r.country}
                   </p>
                 </div>
                 <div className="shrink-0 flex items-center gap-3">

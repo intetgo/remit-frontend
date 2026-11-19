@@ -145,7 +145,7 @@ export function listTransfers(userId: string) {
 
 // ── Recipients ────────────────────────────────────────────────────────────────
 
-export type RecipientAccountType = "BANK" | "MOBILE_WALLET";
+export type RecipientAccountType = "BANK" | "MOBILE_WALLET" | "CASH_PICKUP";
 
 export interface Recipient {
   id: string;
