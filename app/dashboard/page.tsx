@@ -328,6 +328,7 @@ export default function DashboardPage() {
         <div className="flex gap-4 text-xs text-gray-400 pt-2">
           <Link href="/profile" className="hover:text-gray-600">Profile</Link>
           <Link href="/kyc" className="hover:text-gray-600">KYC</Link>
+          <Link href="/notifications" className="hover:text-gray-600">Notifications</Link>
           <Link href="/sim" className="hover:text-gray-600">Sim controls</Link>
           <Link href="/admin/compliance" className="hover:text-gray-600">Admin</Link>
         </div>

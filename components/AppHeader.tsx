@@ -143,7 +143,7 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
                   </div>
                 ) : (
                   <ul className="max-h-[420px] overflow-y-auto divide-y divide-gray-50">
-                    {notifications.map(n => (
+                    {notifications.slice(0, 8).map(n => (
                       <li
                         key={n.id}
                         onClick={() => handleClick(n)}
@@ -168,6 +168,15 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
                     ))}
                   </ul>
                 )}
+                <div className="border-t border-gray-100 px-4 py-2.5 text-center">
+                  <Link
+                    href="/notifications"
+                    onClick={() => setOpen(false)}
+                    className="text-xs text-indigo-600 hover:underline font-medium"
+                  >
+                    View all notifications →
+                  </Link>
+                </div>
               </div>
             )}
           </div>
