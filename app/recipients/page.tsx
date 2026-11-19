@@ -33,6 +33,26 @@ const DEFAULT_ACCOUNT_TYPES: { value: RecipientAccountType; label: string }[] = 
   { value: "BANK", label: "Bank Deposit" },
 ];
 
+const PH_BANKS = [
+  { code: "BDO",        label: "BDO Unibank" },
+  { code: "BPI",        label: "Bank of the Philippine Islands (BPI)" },
+  { code: "METROBANK",  label: "Metrobank" },
+  { code: "PNB",        label: "Philippine National Bank (PNB)" },
+  { code: "SECURITYBANK", label: "Security Bank" },
+  { code: "UNIONBANK",  label: "UnionBank of the Philippines" },
+  { code: "RCBC",       label: "Rizal Commercial Banking Corp (RCBC)" },
+  { code: "CHINABANK",  label: "China Banking Corporation" },
+  { code: "EASTWEST",   label: "EastWest Bank" },
+  { code: "LANDBANK",   label: "Land Bank of the Philippines" },
+  { code: "DBP",        label: "Development Bank of the Philippines (DBP)" },
+  { code: "PSB",        label: "Philippine Savings Bank (PSBank)" },
+  { code: "CIMB",       label: "CIMB Bank Philippines" },
+  { code: "MAYA",       label: "Maya Bank" },
+  { code: "TONIK",      label: "Tonik Digital Bank" },
+  { code: "SEABANK",    label: "SeaBank Philippines" },
+  { code: "GOTULONG",   label: "GoTyme Bank" },
+];
+
 const BLANK = {
   fullName: "",
   country: "PH",
@@ -151,7 +171,7 @@ export default function RecipientsPage() {
                     const accountType = types.some(t => t.value === form.accountType)
                       ? form.accountType
                       : types[0].value;
-                    setForm(f => ({ ...f, country, accountType }));
+                    setForm(f => ({ ...f, country, accountType, bankCode: "" }));
                   }}
                   className={inputCls}
                 >
@@ -163,7 +183,7 @@ export default function RecipientsPage() {
               <Field label="Account type" required>
                 <select
                   value={form.accountType}
-                  onChange={e => setForm(f => ({ ...f, accountType: e.target.value as RecipientAccountType }))}
+                  onChange={e => setForm(f => ({ ...f, accountType: e.target.value as RecipientAccountType, bankCode: "" }))}
                   className={inputCls}
                 >
                   {(ACCOUNT_TYPES[form.country] ?? DEFAULT_ACCOUNT_TYPES).map(t => (
@@ -174,14 +194,30 @@ export default function RecipientsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Bank / wallet code">
-                <input
-                  value={form.bankCode}
-                  onChange={e => setForm(f => ({ ...f, bankCode: e.target.value }))}
-                  placeholder="BDO"
-                  className={inputCls}
-                />
-              </Field>
+              {form.country === "PH" && form.accountType === "BANK" ? (
+                <Field label="Bank" required>
+                  <select
+                    required
+                    value={form.bankCode}
+                    onChange={e => setForm(f => ({ ...f, bankCode: e.target.value }))}
+                    className={inputCls}
+                  >
+                    <option value="">Select bank</option>
+                    {PH_BANKS.map(b => (
+                      <option key={b.code} value={b.code}>{b.label}</option>
+                    ))}
+                  </select>
+                </Field>
+              ) : (
+                <Field label="Bank / wallet code">
+                  <input
+                    value={form.bankCode}
+                    onChange={e => setForm(f => ({ ...f, bankCode: e.target.value }))}
+                    placeholder="BDO"
+                    className={inputCls}
+                  />
+                </Field>
+              )}
               <Field label="Account number" required>
                 <input
                   required
