@@ -85,6 +85,17 @@ export function getUser(id: string) {
   return request<User>(`/v1/users/${id}`);
 }
 
+export function forgotPassword(email: string) {
+  return request<{ message: string; resetUrl: string | null }>(
+    "/auth/forgot-password",
+    { method: "POST", body: { email } }
+  );
+}
+
+export function resetPassword(token: string, password: string) {
+  return request<void>("/auth/reset-password", { method: "POST", body: { token, password } });
+}
+
 export function login(email: string, password: string) {
   return request<{ token: string; tokenType: string; expiresIn: number }>(
     "/auth/token",
