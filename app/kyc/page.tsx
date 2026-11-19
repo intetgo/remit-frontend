@@ -7,13 +7,35 @@ import { useAuth } from "@/lib/auth";
 import { simKycPass } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
 
-type Step = "intro" | "id" | "selfie" | "review" | "done";
+type Step = "intro" | "id" | "selfie" | "review" | "digital_id" | "digital_id_redirect" | "done";
+
+const DIGITAL_ID_PROVIDERS = [
+  {
+    id: "service_nsw",
+    name: "Service NSW",
+    desc: "NSW government digital identity",
+    logo: "🏛️",
+  },
+  {
+    id: "myid",
+    name: "myID (myGovID)",
+    desc: "Australian federal government digital identity",
+    logo: "🇦🇺",
+  },
+  {
+    id: "auspost",
+    name: "Australia Post Digital iD",
+    desc: "Verify with Australia Post",
+    logo: "📮",
+  },
+];
 
 export default function KycPage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
   const [step, setStep] = useState<Step>("intro");
   const [idType, setIdType] = useState("passport");
+  const [digitalIdProvider, setDigitalIdProvider] = useState<typeof DIGITAL_ID_PROVIDERS[0] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,35 +63,111 @@ export default function KycPage() {
           <Link href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600">← Back to dashboard</Link>
         </div>
 
-        {/* Step: intro */}
+        {/* Step: intro — choose method */}
         {step === "intro" && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <div className="space-y-1">
               <h1 className="text-xl font-semibold text-gray-900">Verify your identity</h1>
-              <p className="text-sm text-gray-500">Required before you can send money. Takes about 2 minutes.</p>
+              <p className="text-sm text-gray-500">Required before you can send money. Choose how you'd like to verify.</p>
             </div>
 
             <div className="space-y-3">
-              {[
-                { icon: "🪪", title: "Government-issued ID", desc: "Passport, driver's licence, or national ID" },
-                { icon: "🤳", title: "Selfie", desc: "A photo of you holding your ID" },
-                { icon: "✅", title: "Instant decision", desc: "Most verifications are approved immediately" },
-              ].map(item => (
-                <div key={item.title} className="flex items-start gap-3 rounded-xl bg-gray-50 px-4 py-3">
-                  <span className="text-xl mt-0.5">{item.icon}</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+              {/* Digital identity option */}
+              <button
+                onClick={() => setStep("digital_id")}
+                className="w-full text-left rounded-xl border-2 border-indigo-200 bg-indigo-50/40 hover:border-indigo-400 hover:bg-indigo-50 px-5 py-4 transition-colors group"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl mt-0.5">🏛️</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900">Verify with Australian digital identity</p>
+                      <span className="text-[10px] font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Recommended</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">Use Service NSW, myID, or Australia Post Digital iD — instant and secure.</p>
                   </div>
                 </div>
-              ))}
+              </button>
+
+              {/* Upload ID option */}
+              <button
+                onClick={() => setStep("id")}
+                className="w-full text-left rounded-xl border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-5 py-4 transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl mt-0.5">🪪</span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Upload ID document</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Passport, driver's licence, or national ID + a selfie.</p>
+                  </div>
+                </div>
+              </button>
             </div>
 
+            <p className="text-xs text-gray-400 text-center">Your information is encrypted and used only for verification.</p>
+          </div>
+        )}
+
+        {/* Step: digital identity — choose provider */}
+        {step === "digital_id" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <div className="space-y-1">
+              <button onClick={() => setStep("intro")} className="text-xs text-gray-400 hover:text-gray-600 mb-1">← Back</button>
+              <h1 className="text-xl font-semibold text-gray-900">Choose your digital identity</h1>
+              <p className="text-sm text-gray-500">Select one of the supported Australian digital identity services.</p>
+            </div>
+
+            <div className="space-y-3">
+              {DIGITAL_ID_PROVIDERS.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => { setDigitalIdProvider(p); setStep("digital_id_redirect"); }}
+                  className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30 px-5 py-4 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{p.logo}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{p.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{p.desc}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step: digital identity — simulated redirect */}
+        {step === "digital_id_redirect" && digitalIdProvider && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center text-3xl">
+              {digitalIdProvider.logo}
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Redirecting to {digitalIdProvider.name}</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                You&apos;ll be taken to {digitalIdProvider.name} to verify your identity. Once done, you&apos;ll be returned here automatically.
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-700 text-left">
+              <span className="font-semibold">Prototype only:</span> In production this redirects to {digitalIdProvider.name}. Click below to simulate a successful verification.
+            </div>
+
+            {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+
             <button
-              onClick={() => setStep("id")}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
             >
-              Start verification
+              {loading ? "Verifying…" : `Simulate ${digitalIdProvider.name} verification`}
+            </button>
+            <button
+              onClick={() => setStep("digital_id")}
+              className="block w-full text-sm text-gray-400 hover:text-gray-600"
+            >
+              Choose a different provider
             </button>
           </div>
         )}
