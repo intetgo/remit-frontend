@@ -14,6 +14,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [rateLimited, setRateLimited] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,6 +26,7 @@ function LoginForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setRateLimited(false);
     setLoading(true);
     try {
       const { token } = await login(email, password);
@@ -34,7 +36,11 @@ function LoginForm() {
       setAuth(userProfile, token);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Invalid email or password");
+      if (err instanceof ApiError && err.status === 429) {
+        setRateLimited(true);
+      } else {
+        setError(err instanceof ApiError ? err.message : "Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }
@@ -90,13 +96,19 @@ function LoginForm() {
             />
           </div>
 
-          {error && (
+          {rateLimited && (
+            <div className="text-sm text-orange-800 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+              Too many sign-in attempts. Please wait a minute and try again.
+            </div>
+          )}
+
+          {error && !rateLimited && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || rateLimited}
             className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
           >
             {loading ? "Signing in…" : "Sign in"}
