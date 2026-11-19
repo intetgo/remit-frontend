@@ -69,6 +69,7 @@ export default function DashboardPage() {
 
         <div className="flex gap-4 text-sm">
           <Link href="/recipients" className="text-indigo-600 hover:underline">Manage recipients</Link>
+          <Link href="/sim" className="text-gray-400 hover:text-gray-600">Sim controls</Link>
         </div>
       </main>
     </div>

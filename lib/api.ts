@@ -174,3 +174,67 @@ export function listNotifications() {
 export function markNotificationRead(id: string) {
   return request<void>(`/v1/notifications/${id}/read`, { method: "PATCH" });
 }
+
+// ── Sim / prototype controls ──────────────────────────────────────────────────
+
+async function simRequest<T>(path: string, opts: FetchOptions = {}): Promise<T> {
+  const { token } = await request<{ token: string }>("/sim/token", { method: "POST" });
+  const { body, headers, ...rest } = opts;
+  const res = await fetch(`${BASE}${path}`, {
+    ...rest,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...headers,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new ApiError(res.status, err.message ?? res.statusText, err);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+export interface ComplianceCase {
+  id: string;
+  transferId: string;
+  status: string;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export function simFundingReceive(transferId: string) {
+  return simRequest<Transfer>(`/sim/transfers/${transferId}/funding/receive`, { method: "POST" });
+}
+export function simFundingFail(transferId: string) {
+  return simRequest<Transfer>(`/sim/transfers/${transferId}/funding/fail`, { method: "POST" });
+}
+export function simPayoutComplete(transferId: string) {
+  return simRequest<Transfer>(`/sim/transfers/${transferId}/payout/complete`, { method: "POST" });
+}
+export function simPayoutFail(transferId: string) {
+  return simRequest<Transfer>(`/sim/transfers/${transferId}/payout/fail`, { method: "POST" });
+}
+export function simRefundComplete(transferId: string) {
+  return simRequest<Transfer>(`/sim/transfers/${transferId}/refund/complete`, { method: "POST" });
+}
+export function simCancelTransfer(transferId: string) {
+  return simRequest<Transfer>(`/sim/transfers/${transferId}/cancel`, { method: "POST" });
+}
+export function simKycPass(userId: string, tier: string) {
+  return simRequest<unknown>(`/sim/users/${userId}/kyc/pass?tier=${tier}`, { method: "POST" });
+}
+export function simKycFail(userId: string, tier: string) {
+  return simRequest<unknown>(`/sim/users/${userId}/kyc/fail?tier=${tier}`, { method: "POST" });
+}
+export function listComplianceCases() {
+  return simRequest<ComplianceCase[]>("/admin/compliance/cases");
+}
+export function approveComplianceCase(caseId: string) {
+  return simRequest<unknown>(`/admin/compliance/cases/${caseId}/approve`, { method: "POST" });
+}
+export function rejectComplianceCase(caseId: string) {
+  return simRequest<unknown>(`/admin/compliance/cases/${caseId}/reject`, { method: "POST" });
+}
