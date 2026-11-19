@@ -91,7 +91,8 @@ export default function TransfersPage() {
               const style = STATUS_STYLES[t.status] ?? { dot: "bg-gray-300", label: t.status };
               const destCurrency = t.receiveAmount.currency;
               return (
-                <li key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+                <li key={t.id}>
+                <Link href={`/transfers/${t.id}`} className="block bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 hover:border-gray-200 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -116,6 +117,7 @@ export default function TransfersPage() {
                       </p>
                     </div>
                   </div>
+                </Link>
                 </li>
               );
             })}
