@@ -204,14 +204,26 @@ export default function TransferDetailPage() {
                 </span>
               </div>
 
-              {canCancel && (
-                <div className="pt-2 border-t border-gray-100">
-                  <button
-                    onClick={() => setConfirmCancel(true)}
-                    className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
-                  >
-                    Cancel transfer
-                  </button>
+              {(canCancel || isTerminal) && (
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-4">
+                  {canCancel && (
+                    <button
+                      onClick={() => setConfirmCancel(true)}
+                      className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+                    >
+                      Cancel transfer
+                    </button>
+                  )}
+                  {isTerminal && (
+                    <Link
+                      href={`/transfers/${transfer.id}/receipt`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors ml-auto"
+                    >
+                      Print receipt ↗
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
