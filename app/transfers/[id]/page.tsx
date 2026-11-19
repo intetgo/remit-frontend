@@ -53,32 +53,33 @@ export default function TransferDetailPage() {
   const [transfer, setTransfer] = useState<Transfer | null>(null);
   const [recipient, setRecipient] = useState<Recipient | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
   }, [user, authLoading, router]);
 
-  useEffect(() => {
+  async function load(isRefresh = false) {
     if (!user || !id) return;
-    async function load() {
-      try {
-        const [t, recipients] = await Promise.all([
-          getTransfer(id),
-          listRecipients(),
-        ]);
-        setTransfer(t);
-        if (t.recipientId) {
-          setRecipient(recipients.find(r => r.id === t.recipientId) ?? null);
-        }
-      } catch {
-        setError("Transfer not found.");
-      } finally {
-        setLoading(false);
+    isRefresh ? setRefreshing(true) : setLoading(true);
+    try {
+      const [t, recipients] = await Promise.all([
+        getTransfer(id),
+        listRecipients(),
+      ]);
+      setTransfer(t);
+      if (t.recipientId) {
+        setRecipient(recipients.find(r => r.id === t.recipientId) ?? null);
       }
+    } catch {
+      setError("Transfer not found.");
+    } finally {
+      isRefresh ? setRefreshing(false) : setLoading(false);
     }
-    load();
-  }, [user, id]);
+  }
+
+  useEffect(() => { load(); }, [user, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (authLoading || !user) return null;
 
@@ -92,10 +93,19 @@ export default function TransferDetailPage() {
       <AppHeader />
 
       <main className="max-w-lg mx-auto px-4 py-10">
-        <div className="flex items-center gap-3 mb-6">
-          <Link href="/transfers" className="text-sm text-gray-400 hover:text-gray-600">← Transfers</Link>
-          <span className="text-gray-200">/</span>
-          <span className="text-sm text-gray-500 font-mono truncate">{id.slice(0, 13)}…</span>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link href="/transfers" className="text-sm text-gray-400 hover:text-gray-600">← Transfers</Link>
+            <span className="text-gray-200">/</span>
+            <span className="text-sm text-gray-500 font-mono truncate">{id.slice(0, 13)}…</span>
+          </div>
+          <button
+            onClick={() => load(true)}
+            disabled={refreshing}
+            className="text-xs text-indigo-600 hover:underline disabled:opacity-40"
+          >
+            {refreshing ? "Refreshing…" : "↻ Refresh"}
+          </button>
         </div>
 
         {loading ? (
