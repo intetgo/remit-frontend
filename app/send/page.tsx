@@ -42,6 +42,7 @@ export default function SendPage() {
   const [transfer, setTransfer] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [secsLeft, setSecsLeft] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -73,6 +74,19 @@ export default function SendPage() {
       }
     }, 500);
   }, [sendAmount, destCurrency, step]);
+
+  // Countdown while on confirm step
+  useEffect(() => {
+    if (step !== "confirm" || !quote) { setSecsLeft(null); return; }
+    function tick() {
+      const left = Math.max(0, Math.round((new Date(quote!.expiresAt).getTime() - Date.now()) / 1000));
+      setSecsLeft(left);
+      return left;
+    }
+    tick();
+    const id = setInterval(() => { if (tick() <= 0) clearInterval(id); }, 1000);
+    return () => clearInterval(id);
+  }, [step, quote]);
 
   async function handleConfirm() {
     if (!quote || !user) return;
@@ -289,9 +303,21 @@ export default function SendPage() {
               <Row label="Rate" value={`1 AUD = ${quote.customerRate.toFixed(4)} ${destCurrency}`} />
             </div>
 
-            <p className="text-xs text-gray-400">
-              Rate locked for 60 seconds · Quote ID: {quote.id.slice(0, 8)}…
-            </p>
+            {/* Countdown / expiry banner */}
+            {secsLeft !== null && secsLeft > 0 && secsLeft <= 15 ? (
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                <span className="text-amber-600 text-sm font-semibold tabular-nums w-6 text-right">{secsLeft}s</span>
+                <span className="text-xs text-amber-700">Rate expiring — confirm now</span>
+              </div>
+            ) : secsLeft === 0 ? (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
+                Rate expired. Go back and get a fresh quote.
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">
+                Rate locked · {secsLeft !== null ? `${secsLeft}s remaining` : "60s"} · Quote ID: {quote.id.slice(0, 8)}…
+              </p>
+            )}
 
             {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
@@ -304,7 +330,7 @@ export default function SendPage() {
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={loading}
+                disabled={loading || secsLeft === 0}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors"
               >
                 {loading ? "Sending…" : "Confirm & send"}
