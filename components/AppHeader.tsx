@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import {
   listNotifications,
@@ -21,7 +22,8 @@ function relativeDate(iso: string) {
 }
 
 export default function AppHeader({ title = "Remit" }: { title?: string }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -135,6 +137,14 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
         )}
 
         <span className="text-sm text-gray-500">{user?.email}</span>
+        {user && (
+          <button
+            onClick={() => { logout(); router.push("/login"); }}
+            className="text-sm text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            Sign out
+          </button>
+        )}
       </div>
     </header>
   );

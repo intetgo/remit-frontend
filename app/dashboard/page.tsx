@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import AppHeader from "@/components/AppHeader";
 
 export default function DashboardPage() {
-  const { user, logout, authLoading } = useAuth();
+  const { user, authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -60,12 +60,6 @@ export default function DashboardPage() {
         <div className="flex gap-4 text-sm">
           <Link href="/recipients" className="text-indigo-600 hover:underline">Manage recipients</Link>
           <Link href="/sim" className="text-gray-400 hover:text-gray-600">Sim controls</Link>
-          <button
-            onClick={() => { logout(); router.push("/login"); }}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            Sign out
-          </button>
         </div>
       </main>
     </div>
