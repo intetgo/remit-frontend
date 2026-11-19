@@ -33,6 +33,20 @@ const DEFAULT_ACCOUNT_TYPES: { value: RecipientAccountType; label: string }[] = 
   { value: "BANK", label: "Bank Deposit" },
 ];
 
+const PH_MOBILE_WALLETS = [
+  { code: "GCASH",      label: "GCash" },
+  { code: "MAYA",       label: "Maya (PayMaya)" },
+  { code: "SHOPEEPAY",  label: "ShopeePay" },
+  { code: "GRABPAY",    label: "GrabPay" },
+  { code: "COINS",      label: "Coins.ph" },
+  { code: "OMNIPAY",    label: "OmniPay" },
+  { code: "BDOPAY",     label: "BDO Pay" },
+  { code: "BPIPAY",     label: "BPI Mobile / BPI Pay" },
+  { code: "TRUEMONEY",  label: "TrueMoney Wallet" },
+  { code: "BAYAD",      label: "Bayad" },
+  { code: "CLIQQ",      label: "7-Eleven CLiQQ Pay" },
+];
+
 const PH_BANKS = [
   { code: "BDO",        label: "BDO Unibank" },
   { code: "BPI",        label: "Bank of the Philippine Islands (BPI)" },
@@ -205,6 +219,20 @@ export default function RecipientsPage() {
                     <option value="">Select bank</option>
                     {PH_BANKS.map(b => (
                       <option key={b.code} value={b.code}>{b.label}</option>
+                    ))}
+                  </select>
+                </Field>
+              ) : form.country === "PH" && form.accountType === "MOBILE_WALLET" ? (
+                <Field label="Mobile wallet" required>
+                  <select
+                    required
+                    value={form.bankCode}
+                    onChange={e => setForm(f => ({ ...f, bankCode: e.target.value }))}
+                    className={inputCls}
+                  >
+                    <option value="">Select wallet</option>
+                    {PH_MOBILE_WALLETS.map(w => (
+                      <option key={w.code} value={w.code}>{w.label}</option>
                     ))}
                   </select>
                 </Field>
