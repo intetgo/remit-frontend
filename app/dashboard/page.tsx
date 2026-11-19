@@ -58,13 +58,17 @@ export default function DashboardPage() {
           </Link>
 
           <Link
-            href="/recipients"
+            href="/transfers"
             className="flex flex-col gap-1 bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm rounded-2xl p-5 transition-all"
           >
-            <span className="text-2xl">👤</span>
-            <span className="font-semibold text-gray-700">Recipients</span>
-            <span className="text-xs text-gray-400">Manage beneficiaries</span>
+            <span className="text-2xl">📋</span>
+            <span className="font-semibold text-gray-700">Transfers</span>
+            <span className="text-xs text-gray-400">View history</span>
           </Link>
+        </div>
+
+        <div className="flex gap-4 text-sm">
+          <Link href="/recipients" className="text-indigo-600 hover:underline">Manage recipients</Link>
         </div>
       </main>
     </div>
