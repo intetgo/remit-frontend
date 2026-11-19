@@ -93,6 +93,13 @@ export function changePassword(userId: string, currentPassword: string, newPassw
   });
 }
 
+export function submitKyc(userId: string, tier: "BASIC" | "FULL") {
+  return request<{ id: string; userId: string; tier: string; status: string; checkedAt: string }>(
+    `/v1/users/${userId}/kyc`,
+    { method: "POST", body: { tier } }
+  );
+}
+
 export function adminBootstrap(email: string, secret: string) {
   return request<void>("/auth/admin-bootstrap", { method: "POST", body: { email, secret } });
 }
