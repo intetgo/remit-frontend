@@ -183,7 +183,13 @@ export default function SendPage() {
       setStep("done");
       listSavedCards().then(setSavedCards).catch(() => {});
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Transfer failed");
+      const msg = err instanceof ApiError ? err.message : "Transfer failed";
+      const isLimitError = msg.toLowerCase().includes("limit") || msg.toLowerCase().includes("exceeded");
+      if (isLimitError && user.kycTier === "BASIC") {
+        setError("__LIMIT_BASIC__");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -560,7 +566,19 @@ export default function SendPage() {
               </p>
             )}
 
-            {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+            {error === "__LIMIT_BASIC__" ? (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 space-y-1.5">
+                <p className="text-sm font-semibold text-amber-800">Monthly limit reached</p>
+                <p className="text-xs text-amber-700">
+                  Your Basic KYC account has a $5,000/month limit. Upgrade to Full KYC for a $50,000/month limit.
+                </p>
+                <Link href="/kyc" className="inline-block text-xs font-semibold text-amber-900 underline mt-0.5">
+                  Upgrade KYC →
+                </Link>
+              </div>
+            ) : error ? (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            ) : null}
 
             <div className="flex gap-3">
               <button

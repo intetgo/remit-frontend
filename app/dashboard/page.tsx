@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { listTransfers, listRecipients, listSavedCards, type Transfer } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
 
-const TERMINAL = new Set(["COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]);
+const TERMINAL = new Set(["COMPLETED", "FAILED", "CANCELLED", "REFUNDED", "PAYOUT_SENT"]);
 
 const STATUS_DOT: Record<string, string> = {
   CREATED: "bg-gray-400", QUOTE_LOCKED: "bg-blue-400", FUNDING_PENDING: "bg-yellow-400",

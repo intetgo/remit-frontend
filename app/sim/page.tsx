@@ -55,7 +55,7 @@ const STATUS_DOT: Record<string, string> = {
   CREATED: "bg-gray-400", QUOTE_LOCKED: "bg-blue-400", FUNDING_PENDING: "bg-yellow-400",
   FUNDED: "bg-blue-500", COMPLIANCE_REVIEW: "bg-purple-400", PAYOUT_PENDING: "bg-indigo-400",
   PAYOUT_SENT: "bg-indigo-500", COMPLETED: "bg-green-500", FAILED: "bg-red-500",
-  CANCELLED: "bg-gray-500", REFUND_PENDING: "bg-orange-400", REFUNDED: "bg-orange-500",
+  CANCELLED: "bg-gray-500", REFUND_PENDING: "bg-orange-400", REFUNDED: "bg-green-400",
 };
 
 function fmt(amount: string, currency: string) {
