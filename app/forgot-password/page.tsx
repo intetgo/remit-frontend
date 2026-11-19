@@ -8,7 +8,6 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [resetUrl, setResetUrl] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -16,8 +15,7 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await forgotPassword(email);
-      setResetUrl(res.resetUrl);
+      await forgotPassword(email);
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong");
@@ -32,7 +30,7 @@ export default function ForgotPasswordPage() {
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-gray-900">Reset your password</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {submitted ? "Check the link below" : "Enter your email and we'll send a reset link"}
+            {submitted ? "Check your inbox" : "Enter your email and we'll send a reset link"}
           </p>
         </div>
 
@@ -71,19 +69,18 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-gray-700">
               If <span className="font-medium">{email}</span> is registered, a reset link has been sent.
             </p>
-
-            {resetUrl && (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-left space-y-1">
-                <p className="text-xs font-semibold text-amber-800">Dev mode — no email provider configured</p>
-                <p className="text-xs text-amber-700">In production this would be emailed. Use the link below:</p>
-                <Link
-                  href={resetUrl}
-                  className="block text-xs text-indigo-700 underline break-all mt-1"
-                >
-                  {resetUrl}
-                </Link>
-              </div>
-            )}
+            <p className="text-xs text-gray-500">
+              Check your inbox — or open the{" "}
+              <a
+                href="http://localhost:8025"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:underline"
+              >
+                MailHog inbox
+              </a>{" "}
+              if running locally.
+            </p>
           </div>
         )}
 

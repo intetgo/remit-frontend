@@ -93,7 +93,7 @@ export function changePassword(userId: string, currentPassword: string, newPassw
 }
 
 export function forgotPassword(email: string) {
-  return request<{ message: string; resetUrl: string | null }>(
+  return request<{ message: string }>(
     "/auth/forgot-password",
     { method: "POST", body: { email } }
   );
