@@ -93,6 +93,10 @@ export function changePassword(userId: string, currentPassword: string, newPassw
   });
 }
 
+export function adminBootstrap(email: string, secret: string) {
+  return request<void>("/auth/admin-bootstrap", { method: "POST", body: { email, secret } });
+}
+
 export function verifyEmail(token: string) {
   return request<void>(`/auth/verify-email?token=${encodeURIComponent(token)}`, { method: "POST" });
 }
