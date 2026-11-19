@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { listTransfers, type Transfer } from "@/lib/api";
+import { listTransfers, listRecipients, listSavedCards, type Transfer } from "@/lib/api";
 import AppHeader from "@/components/AppHeader";
 
 const TERMINAL = new Set(["COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]);
@@ -48,6 +48,8 @@ export default function DashboardPage() {
   const { user, authLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [hasRecipient, setHasRecipient] = useState(false);
+  const [hasCard, setHasCard] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,8 +62,14 @@ export default function DashboardPage() {
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      const data = await listTransfers(user.id);
+      const [data, recipients, cards] = await Promise.all([
+        listTransfers(user.id),
+        listRecipients().catch(() => []),
+        listSavedCards().catch(() => []),
+      ]);
       setTransfers(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setHasRecipient(recipients.length > 0);
+      setHasCard(cards.length > 0);
     } catch {}
     finally { setLoading(false); }
   }, [user]);
@@ -71,6 +79,15 @@ export default function DashboardPage() {
   if (authLoading || !user) return null;
 
   const kycOk = user.kycTier !== "UNVERIFIED";
+
+  const onboardingSteps = [
+    { label: "Verify your identity",    done: kycOk,          href: "/kyc",              detail: "Required to send money" },
+    { label: "Add a recipient",         done: hasRecipient,   href: "/recipients",       detail: "Who you'll send to" },
+    { label: "Save a payment method",   done: hasCard,        href: "/payment-methods",  detail: "Card for instant funding" },
+    { label: "Send your first transfer",done: transfers.length > 0, href: "/send",       detail: "Live exchange rates" },
+  ];
+  const onboardingDone = onboardingSteps.filter(s => s.done).length;
+  const showOnboarding = !loading && onboardingDone < onboardingSteps.length;
   const limitAud = user.monthlyLimitAudCents
     ? user.monthlyLimitAudCents / 100
     : user.kycTier === "FULL" ? 50000 : user.kycTier === "BASIC" ? 5000 : 0;
@@ -104,6 +121,55 @@ export default function DashboardPage() {
             {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
           </p>
         </div>
+
+        {/* Onboarding checklist */}
+        {showOnboarding && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Get started</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{onboardingDone} of {onboardingSteps.length} steps complete</p>
+              </div>
+              {/* Progress bar */}
+              <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-all"
+                  style={{ width: `${(onboardingDone / onboardingSteps.length) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <ul className="space-y-1">
+              {onboardingSteps.map((step, i) => (
+                <li key={i}>
+                  <Link
+                    href={step.href}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
+                      step.done ? "opacity-50 cursor-default pointer-events-none" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                      step.done ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"
+                    }`}>
+                      {step.done ? "✓" : i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-medium ${step.done ? "line-through text-gray-400" : "text-gray-800"}`}>
+                        {step.label}
+                      </p>
+                      {!step.done && (
+                        <p className="text-xs text-gray-400 mt-0.5">{step.detail}</p>
+                      )}
+                    </div>
+                    {!step.done && (
+                      <span className="text-gray-300 text-sm shrink-0">›</span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* KYC banner */}
         {!kycOk && (
