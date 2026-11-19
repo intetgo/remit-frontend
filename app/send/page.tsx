@@ -352,20 +352,56 @@ export default function SendPage() {
         )}
 
         {/* ── Step 4: Done ── */}
-        {step === "done" && transfer && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5 text-center">
-            <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-2xl">✓</div>
-            <div>
+        {step === "done" && transfer && quote && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <div className="text-center space-y-2">
+              <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-2xl">✓</div>
               <h2 className="text-lg font-semibold text-gray-900">Transfer created!</h2>
-              <p className="text-sm text-gray-500 mt-1">Your transfer is awaiting funding.</p>
+              <p className="text-sm text-gray-500">Now fund your transfer to get it moving.</p>
             </div>
-            <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-left space-y-2 text-sm">
+
+            {/* Funding instructions */}
+            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 space-y-3">
+              <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">How to fund your transfer</p>
+              <p className="text-sm text-gray-700">
+                Make a bank transfer of{" "}
+                <span className="font-semibold">
+                  {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" })
+                    .format(Number(quote.sendAmount.amount) + Number(quote.feeAmount.amount))}
+                </span>{" "}
+                to:
+              </p>
+              <div className="rounded-lg bg-white border border-indigo-100 px-4 py-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Bank</span>
+                  <span className="font-medium text-gray-900">Remit AU (simulated)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">BSB</span>
+                  <span className="font-mono font-medium text-gray-900">062-000</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Account</span>
+                  <span className="font-mono font-medium text-gray-900">10000001</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Reference</span>
+                  <span className="font-mono font-medium text-gray-900">REMIT-{transfer.id.slice(0, 8).toUpperCase()}</span>
+                </div>
+              </div>
+              <p className="text-xs text-indigo-700">
+                Use the reference exactly as shown — it links your payment to this transfer.
+              </p>
+            </div>
+
+            {/* Transfer summary */}
+            <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2 text-sm">
               {selectedRecipient && (
                 <Row label="Recipient" value={selectedRecipient.nickname ?? selectedRecipient.fullName} />
               )}
               <Row label="Transfer ID" value={transfer.id.slice(0, 13) + "…"} />
-              <Row label="Status" value="CREATED" />
             </div>
+
             <div className="flex gap-3">
               <button
                 onClick={() => { setStep("recipient"); setQuote(null); setSelectedRecipient(null); setSendAmount("200"); }}
@@ -374,10 +410,10 @@ export default function SendPage() {
                 Send another
               </button>
               <Link
-                href="/dashboard"
+                href={`/transfers/${transfer.id}`}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg px-4 py-2.5 transition-colors text-center"
               >
-                Dashboard
+                Track transfer
               </Link>
             </div>
           </div>

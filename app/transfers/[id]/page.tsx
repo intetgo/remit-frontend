@@ -158,7 +158,7 @@ export default function TransferDetailPage() {
                   {recipient.nickname ? `${recipient.nickname} (${recipient.fullName})` : recipient.fullName}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {recipient.accountType === "BANK" ? "Bank" : "Mobile wallet"} · {recipient.bankCode ? `${recipient.bankCode} · ` : ""}{recipient.accountNumber} · {recipient.country}
+                  {{ BANK: "Bank Deposit", MOBILE_WALLET: "Mobile Wallet", CASH_PICKUP: "Cash Pickup" }[recipient.accountType] ?? recipient.accountType} · {recipient.bankCode ? `${recipient.bankCode} · ` : ""}{recipient.accountNumber} · {recipient.country}
                 </p>
               </div>
             )}
