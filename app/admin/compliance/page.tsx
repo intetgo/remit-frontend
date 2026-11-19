@@ -191,6 +191,7 @@ export default function CompliancePanel() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Link href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600">← Dashboard</Link>
+              <Link href="/admin/users" className="text-sm text-indigo-600 hover:underline">Users →</Link>
             </div>
             <h1 className="text-xl font-semibold text-gray-900">Compliance Review</h1>
             <p className="text-sm text-gray-500 mt-0.5">AUSTRAC / DFAT monitoring · simulated</p>

@@ -414,6 +414,41 @@ export function rejectComplianceCase(caseId: string) {
 }
 
 // Admin compliance panel — uses sim token (required for /admin/** ADMIN role)
+// Admin user management
+export interface AdminUser {
+  id: string;
+  email: string;
+  fullName: string | null;
+  phone: string | null;
+  role: string;
+  kycTier: string;
+  emailVerifiedAt: string | null;
+  createdAt: string;
+}
+
+export interface UserPage {
+  users: AdminUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export function adminListUsers(q?: string, page = 0) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (page) params.set("page", String(page));
+  const qs = params.toString();
+  return simRequest<UserPage>(`/admin/users${qs ? `?${qs}` : ""}`);
+}
+
+export function adminGetUser(id: string) {
+  return simRequest<AdminUser>(`/admin/users/${id}`);
+}
+
+export function adminListTransfers(userId: string) {
+  return simRequest<Transfer[]>(`/v1/transfers?userId=${userId}`);
+}
+
 export function adminListComplianceCases(status?: string) {
   const qs = status ? `?status=${status}` : "";
   return simRequest<ComplianceCase[]>(`/admin/compliance/cases${qs}`);
