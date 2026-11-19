@@ -15,6 +15,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [rateLimited, setRateLimited] = useState(false);
+  const [retryAfter, setRetryAfter] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ function LoginForm() {
     e.preventDefault();
     setError("");
     setRateLimited(false);
+    setRetryAfter(0);
     setLoading(true);
     try {
       const { token } = await login(email, password);
@@ -37,7 +39,15 @@ function LoginForm() {
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
+        const secs = (err.body as { retryAfterSeconds?: number })?.retryAfterSeconds ?? 60;
         setRateLimited(true);
+        setRetryAfter(secs);
+        const timer = setInterval(() => {
+          setRetryAfter(prev => {
+            if (prev <= 1) { clearInterval(timer); setRateLimited(false); return 0; }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
         setError(err instanceof ApiError ? err.message : "Invalid email or password");
       }
@@ -98,7 +108,10 @@ function LoginForm() {
 
           {rateLimited && (
             <div className="text-sm text-orange-800 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
-              Too many sign-in attempts. Please wait a minute and try again.
+              Too many sign-in attempts.{" "}
+              {retryAfter > 0
+                ? <>Try again in <span className="font-medium tabular-nums">{retryAfter}s</span>.</>
+                : "Please try again."}
             </div>
           )}
 
