@@ -21,6 +21,29 @@ function relativeDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
+const NOTIF_ICON: Record<string, { icon: string; bg: string; text: string }> = {
+  TRANSFER_CREATED:          { icon: "✦", bg: "bg-blue-100",   text: "text-blue-600" },
+  TRANSFER_FUNDED:           { icon: "↓", bg: "bg-green-100",  text: "text-green-700" },
+  TRANSFER_PAYOUT_PENDING:   { icon: "⟳", bg: "bg-indigo-100", text: "text-indigo-600" },
+  TRANSFER_PAYOUT_SENT:      { icon: "↑", bg: "bg-indigo-100", text: "text-indigo-700" },
+  TRANSFER_COMPLETED:        { icon: "✓", bg: "bg-green-100",  text: "text-green-700" },
+  TRANSFER_FAILED:           { icon: "✕", bg: "bg-red-100",    text: "text-red-600" },
+  TRANSFER_CANCELLED:        { icon: "✕", bg: "bg-gray-100",   text: "text-gray-500" },
+  COMPLIANCE_REVIEW_STARTED: { icon: "⚑", bg: "bg-amber-100",  text: "text-amber-700" },
+  COMPLIANCE_APPROVED:       { icon: "✓", bg: "bg-green-100",  text: "text-green-700" },
+  COMPLIANCE_REJECTED:       { icon: "✕", bg: "bg-red-100",    text: "text-red-600" },
+  TRANSFER_REFUNDED:         { icon: "↩", bg: "bg-orange-100", text: "text-orange-700" },
+};
+
+function NotifIcon({ type }: { type: string }) {
+  const s = NOTIF_ICON[type] ?? { icon: "•", bg: "bg-gray-100", text: "text-gray-500" };
+  return (
+    <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${s.bg} ${s.text}`}>
+      {s.icon}
+    </span>
+  );
+}
+
 export default function AppHeader({ title = "Remit" }: { title?: string }) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -113,21 +136,30 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
                 </div>
 
                 {notifications.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">No notifications</p>
+                  <div className="text-center py-10 px-4">
+                    <p className="text-2xl mb-2">🔔</p>
+                    <p className="text-sm font-medium text-gray-600">You&apos;re all caught up</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Transfer updates will appear here</p>
+                  </div>
                 ) : (
-                  <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                  <ul className="max-h-[420px] overflow-y-auto divide-y divide-gray-50">
                     {notifications.map(n => (
                       <li
                         key={n.id}
                         onClick={() => handleClick(n)}
-                        className={`px-4 py-3 transition-colors ${n.transferId ? "cursor-pointer hover:bg-gray-50" : "cursor-default"} ${!n.read ? "bg-indigo-50/40" : ""}`}
+                        className={`px-4 py-3 transition-colors ${n.transferId ? "cursor-pointer hover:bg-gray-50" : "cursor-default"} ${!n.read ? "bg-indigo-50/30" : ""}`}
                       >
-                        <div className="flex items-start gap-2.5">
-                          <span className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? "bg-indigo-500" : "bg-transparent"}`} />
+                        <div className="flex items-start gap-3">
+                          <NotifIcon type={n.type} />
                           <div className="min-w-0 flex-1">
-                            <p className={`text-sm leading-snug ${!n.read ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}>
-                              {n.subject}
-                            </p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={`text-sm leading-snug ${!n.read ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}>
+                                {n.subject}
+                              </p>
+                              {!n.read && (
+                                <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{n.body}</p>
                             <p className="text-[11px] text-gray-400 mt-1">{relativeDate(n.sentAt)}</p>
                           </div>
