@@ -69,18 +69,18 @@ export function updateProfile(id: string, data: UpdateProfileRequest) {
   return request<User>(`/v1/users/${id}`, { method: "PATCH", body: data });
 }
 
-export function register(email: string, fullName: string) {
-  return request<User>("/v1/users", { method: "POST", body: { email, fullName } });
+export function register(email: string, fullName: string, password: string) {
+  return request<User>("/v1/users", { method: "POST", body: { email, fullName, password } });
 }
 
 export function getUser(id: string) {
   return request<User>(`/v1/users/${id}`);
 }
 
-export function login(email: string) {
+export function login(email: string, password: string) {
   return request<{ token: string; tokenType: string; expiresIn: number }>(
     "/auth/token",
-    { method: "POST", body: { email, password: "x" } }
+    { method: "POST", body: { email, password } }
   );
 }
 

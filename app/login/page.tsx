@@ -10,6 +10,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { setAuth, user, authLoading } = useAuth();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +25,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { token } = await login(email);
+      const { token } = await login(email, password);
       const payload = JSON.parse(atob(token.split(".")[1]));
       // Store token first so getUser() request is authenticated
       localStorage.setItem("remit_token", token);
@@ -58,6 +59,21 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="maria@example.com"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
