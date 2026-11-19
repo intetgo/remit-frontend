@@ -199,7 +199,7 @@ export default function RecipientsPage() {
           <ul className="space-y-3">
             {recipients.map(r => (
               <li key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-900 truncate">
                     {r.nickname ? `${r.nickname} (${r.fullName})` : r.fullName}
                   </p>
@@ -207,13 +207,21 @@ export default function RecipientsPage() {
                     {r.accountType === "BANK" ? "Bank" : "Mobile wallet"} · {r.bankCode ? `${r.bankCode} · ` : ""}{r.accountNumber} · {r.country}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleDelete(r.id)}
-                  disabled={deletingId === r.id}
-                  className="shrink-0 text-xs text-red-500 hover:text-red-700 disabled:opacity-40 font-medium"
-                >
-                  {deletingId === r.id ? "…" : "Remove"}
-                </button>
+                <div className="shrink-0 flex items-center gap-3">
+                  <Link
+                    href={`/send?recipientId=${r.id}`}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                  >
+                    Send
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(r.id)}
+                    disabled={deletingId === r.id}
+                    className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 font-medium"
+                  >
+                    {deletingId === r.id ? "…" : "Remove"}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import {
@@ -30,6 +30,7 @@ const STEPS: { key: Step; label: string }[] = [
 
 export default function SendPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, authLoading } = useAuth();
 
   const [step, setStep] = useState<Step>("recipient");
@@ -58,6 +59,17 @@ export default function SendPage() {
   }, []);
 
   useEffect(() => { if (user) loadRecipients(); }, [user, loadRecipients]);
+
+  // Pre-select recipient and skip to quote step when ?recipientId= is in the URL
+  useEffect(() => {
+    const id = searchParams.get("recipientId");
+    if (!id || recipients.length === 0) return;
+    const match = recipients.find(r => r.id === id);
+    if (match) {
+      setSelectedRecipient(match);
+      setStep("quote");
+    }
+  }, [recipients, searchParams]);
 
   // Live quote as amount / currency changes
   useEffect(() => {
