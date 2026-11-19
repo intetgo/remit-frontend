@@ -147,6 +147,11 @@ export default function AppHeader({ title = "Remit" }: { title?: string }) {
           </Link>
         )}
         {user && (
+          <Link href="/admin/compliance" className="text-sm text-gray-500 hover:text-gray-900 transition-colors hidden sm:block">
+            🛡️ Admin
+          </Link>
+        )}
+        {user && (
           <Link href="/profile" className="text-sm text-gray-500 hover:text-gray-900 transition-colors truncate max-w-[160px]">
             {user.email}
           </Link>

@@ -151,7 +151,7 @@ export default function SimPage() {
                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="BASIC">BASIC</option>
-                <option value="ENHANCED">ENHANCED</option>
+                <option value="FULL">FULL</option>
               </select>
               <Btn
                 label="Pass KYC"

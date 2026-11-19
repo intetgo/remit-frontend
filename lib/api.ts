@@ -306,3 +306,15 @@ export function approveComplianceCase(caseId: string) {
 export function rejectComplianceCase(caseId: string) {
   return simRequest<unknown>(`/admin/compliance/cases/${caseId}/reject`, { method: "POST" });
 }
+
+// Admin compliance panel — uses sim token (required for /admin/** ADMIN role)
+export function adminListComplianceCases(status?: string) {
+  const qs = status ? `?status=${status}` : "";
+  return simRequest<ComplianceCase[]>(`/admin/compliance/cases${qs}`);
+}
+export function adminApproveCase(caseId: string) {
+  return simRequest<ComplianceCase>(`/admin/compliance/cases/${caseId}/approve`, { method: "POST" });
+}
+export function adminRejectCase(caseId: string) {
+  return simRequest<ComplianceCase>(`/admin/compliance/cases/${caseId}/reject`, { method: "POST" });
+}
